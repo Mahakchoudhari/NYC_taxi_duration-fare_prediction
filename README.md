@@ -1,172 +1,224 @@
-# 🚖 NYC Taxi Fare & Duration Prediction (Hyperparameter Tuned)
+# 🚖 NYC Taxi Fare & Trip Duration Prediction
 
-## 📌 Project Overview
+## 📌 Overview
 
-This project focuses on predicting:
+This project predicts:
 
-* 💰 Taxi Fare
-* ⏱️ Trip Duration
+- ⏱️ Taxi Trip Duration
+- 💰 Estimated Taxi Fare
+- 🚗 Estimated Speed
 
-using Machine Learning models on the **NYC Taxi dataset**.
+using Machine Learning on the NYC Taxi Dataset.
 
-The key highlight of this project is **Hyperparameter Tuning** to improve model performance and achieve better accuracy compared to baseline models.
+The project uses:
 
----
-
-## 🎯 Objectives
-
-* Build regression models for fare and duration prediction
-* Perform data preprocessing & feature engineering
-* Apply multiple ML algorithms
-* Optimize models using **Hyperparameter Tuning**
-* Evaluate and compare model performance
+- Feature Engineering
+- XGBoost Regressor
+- Hyperparameter Tuning
+- Streamlit Web App
 
 ---
 
-## 📂 Dataset
+# 🎯 Objectives
 
-The dataset contains taxi trip details such as:
-
-* Pickup & Dropoff coordinates
-* Datetime information
-* Passenger count
-* Distance (engineered)
-* Trip duration (target variables)
+- Predict trip duration accurately
+- Estimate taxi fare dynamically
+- Improve performance using hyperparameter tuning
+- Deploy model using Streamlit
 
 ---
 
-## ⚙️ Workflow
+# 📂 Dataset
 
-### 1️⃣ Data Preprocessing
+The dataset contains:
 
-* Handling missing values
-* Removing outliers
-* Feature scaling
-* Datetime feature extraction (hour, day, etc.)
+- Vendor ID
+- Pickup & Dropoff Datetime
+- Passenger Count
+- Pickup & Dropoff Coordinates
+- Store and Forward Flag
+- Trip Duration
 
-### 2️⃣ Feature Engineering
+Dataset Size:
 
-* Distance calculation (Haversine formula)
-* Time-based features
-* Location-based insights
-
----
-
-## 🤖 Models Used
-
-* Linear Regression
-* Decision Tree Regressor
-* Random Forest Regressor
-* XGBoost 
+- Rows: 1,458,644
+- Columns: 10
 
 ---
 
-## 🔥 Hyperparameter Tuning
+# ⚙️ Workflow
 
-Hyperparameter tuning was performed using:
+## 1️⃣ Data Preprocessing
 
-* GridSearchCV / RandomizedSearchCV / Bayesian optimization
+- Removed unnecessary columns
+- Checked missing values
+- Removed outliers
+- Log transformation of target variable
 
-### Example Tuned Parameters:
+## 2️⃣ Feature Engineering
 
+Created features such as:
 
-* **XGBoost**
-
-  * learning_rate
-  * n_estimators
-  * max_depth
-
----
-
-## 📊 Model Evaluation
-
-Models were evaluated using:
-
-* RMSE (Root Mean Squared Error)
-* MAE (Mean Absolute Error)
-* R² Score
-
-### ✅ Outcome
-
-* Tuned models performed **significantly better** than baseline models
-* Reduced error and improved generalization
+- Pickup Hour
+- Day of Week
+- Weekend Indicator
+- Rush Hour Indicator
+- Night Indicator
+- Haversine Distance
+- Manhattan Distance
+- Route Ratio
+- Bearing Angle
 
 ---
 
-## 📈 Results Summary
+# 🤖 Models Used
 
-| Model         | Before Tuning | After Tuning |
-| ------------- | ------------- | ------------ |
-| Random Forest | Moderate      | Improved ✅   |
-| Decision Tree | Overfitting   | Controlled ✅ |
-| XGBoost       | Good          | Best 🚀      |
-
----
-
-## 🛠️ Tech Stack
-
-* Python 🐍
-* Pandas, NumPy
-* Scikit-learn
-* Matplotlib / Seaborn
-* Jupyter Notebook
+- Linear Regression
+- Decision Tree Regressor
+- Random Forest Regressor
+- XGBoost Regressor 🚀
 
 ---
 
-## 📁 Project Structure
+# 🔥 Hyperparameter Tuning
 
-```
-NYC_taxi_duration-fare_prediction/
-│
-├── data/
-├── notebooks/
-│   └── hyperparameter_tuned.ipynb
-├── models/
-├── README.md
-└── requirements.txt
+Performed tuning using:
+
+- RandomizedSearchCV
+- GridSearchCV
+- Optuna
+
+### Best Optuna Parameters
+
+```python
+{
+ 'n_estimators': 792,
+ 'max_depth': 8,
+ 'learning_rate': 0.074,
+ 'subsample': 0.828,
+ 'colsample_bytree': 0.633,
+ 'min_child_weight': 8
+}
 ```
 
 ---
 
-## 🚀 How to Run
+# 📊 Model Performance
+
+| Metric | Score |
+|--------|--------|
+| MAE | 203.24 |
+| RMSE | 298.30 |
+| R² Score | 0.73 |
+| Accuracy | 72.75% |
+
+---
+
+# 🚖 Sample Prediction
+
+| Prediction | Value |
+|------------|-------|
+| Trip Duration | 517.65 sec |
+| Distance | 1.81 km |
+| Estimated Fare | $11.02 |
+| Speed | 12.59 km/h |
+
+---
+
+# 🌐 Streamlit App
+
+The project includes a Streamlit web app for real-time predictions.
+
+## Features
+
+✅ Trip duration prediction  
+✅ Fare estimation  
+✅ Speed calculation  
+✅ Interactive UI  
+
+---
+
+# 📁 Project Structure
 
 ```bash
-# Clone the repository
-git clone https://github.com/Mahakchoudhari/NYC_taxi_duration-fare_prediction.git
-
-# Navigate to project
-cd NYC_taxi_duration-fare_prediction
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Run notebook
-jupyter notebook
+NYC_taxi_duration-fare_prediction/
+│
+├── notebooks/
+│   └── hyperparameter_tuned.ipynb
+│
+├── models/
+│   ├── best_model.pkl
+│   └── pipe.pkl
+│
+├── app.py
+├── requirements.txt
+└── README.md
 ```
 
 ---
 
-## 💡 Key Learnings
+# 🛠️ Tech Stack
 
-* Importance of feature engineering in real-world datasets
-* Handling noisy and outlier-heavy data
-* Hyperparameter tuning improves performance significantly
-* Trade-off between bias and variance
-
----
-
-## 📌 Future Improvements
-
-* Use Deep Learning models
-* Deploy model using Flask / Streamlit
-* Real-time prediction system
+- Python
+- Pandas
+- NumPy
+- Scikit-learn
+- XGBoost
+- Optuna
+- Streamlit
 
 ---
 
-## 👩‍💻 Author
+# 🚀 Installation
+
+## Clone Repository
+
+```bash
+git clone https://github.com/Mahakchoudhari/NYC_taxi_duration-fare_prediction.git
+```
+
+## Move to Project Folder
+
+```bash
+cd NYC_taxi_duration-fare_prediction
+```
+
+## Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+## Run Streamlit App
+
+```bash
+streamlit run app.py
+```
+
+---
+
+# 💾 Model Saving
+
+```python
+pickle.dump(best_model, open('best_model.pkl', 'wb'))
+pickle.dump(pipe, open('pipe.pkl', 'wb'))
+```
+
+---
+
+# 🔮 Future Improvements
+
+- Live traffic integration
+- Map visualization
+- Deep learning models
+- Cloud deployment
+
+---
+
+# 👩‍💻 Author
 
 **Mehak Choudhari**
 
 ---
 
-⭐ If you like this project, don't forget to star the repo!
+⭐ If you like this project, don't forget to star the repository!
