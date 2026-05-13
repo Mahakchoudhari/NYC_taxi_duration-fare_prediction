@@ -76,7 +76,7 @@ Created features such as:
 - Linear Regression
 - Decision Tree Regressor
 - Random Forest Regressor
-- XGBoost Regressor 🚀
+- XGBoost Regressor 
 
 ---
 
