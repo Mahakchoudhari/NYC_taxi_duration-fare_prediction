@@ -1,0 +1,11 @@
+{
+    "regressor__model__n_estimators": 1168,
+    "regressor__model__max_depth": 7,
+    "regressor__model__learning_rate": 0.024648201778962486,
+    "regressor__model__subsample": 0.7004424305371817,
+    "regressor__model__colsample_bytree": 0.7084052086919511,
+    "regressor__model__min_child_weight": 3,
+    "regressor__model__reg_alpha": 2.3475664512209784,
+    "regressor__model__reg_lambda": 0.023317042334379364,
+    "regressor__model__gamma": 0.11707335506731142
+}
