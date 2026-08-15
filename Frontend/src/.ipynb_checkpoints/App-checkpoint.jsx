@@ -282,6 +282,60 @@ function TaxiMap({ formData }) {
     </div>
   );
 }
+
+// taxi trip Insights
+function getTripInsights(formData, result) {
+  const date = new Date(formData.pickup_datetime);
+
+  const hour = date.getHours();
+  const day = date.getDay();
+
+  const isWeekend = day === 0 || day === 6;
+
+  const isRushHour = [
+    7,
+    8,
+    9,
+    10,
+    16,
+    17,
+    18,
+    19,
+    20,
+  ].includes(hour);
+
+  const isNight =
+    hour >= 22 || hour <= 4;
+
+  let tripType = "Short Trip";
+
+  if (result?.distance_km) {
+    const distance = Number(result.distance_km);
+
+    if (distance >= 10) {
+      tripType = "Long Trip";
+    } else if (distance >= 5) {
+      tripType = "Medium Trip";
+    }
+  }
+
+  let trafficStatus = "Normal Traffic";
+
+  if (isRushHour) {
+    trafficStatus = "Peak Hours";
+  } else if (isNight) {
+    trafficStatus = "Night Hours";
+  }
+
+  return {
+    hour,
+    isWeekend,
+    isRushHour,
+    isNight,
+    tripType,
+    trafficStatus,
+  };
+}
 function App() {
   // =====================================================
   // DEFAULT FORM VALUES
@@ -315,6 +369,12 @@ function App() {
   const [loading, setLoading] = useState(false);
 
   const [error, setError] = useState("");
+
+  // Insights
+  const insights = getTripInsights(
+      formData,
+      result
+    );
 
   // =====================================================
   // HANDLE INPUT CHANGE
@@ -855,6 +915,9 @@ ${JSON.stringify(
 
           <a href="#model">
             Model
+          </a>
+          <a href="#analytics">
+              Analytics
           </a>
 
         </div>
@@ -1423,7 +1486,183 @@ ${JSON.stringify(
           </div>
 
         </section>
+        {/* =========================
+    TRIP INSIGHTS
+========================= */}
 
+<section
+  className="analytics-section"
+  id="analytics"
+>
+
+  <div className="section-title">
+
+    <h2>
+      Trip Insights
+    </h2>
+
+    <p>
+      Intelligent analysis based on your trip details
+    </p>
+
+  </div>
+
+
+  <div className="analytics-grid">
+
+
+    {/* TRAFFIC */}
+
+    <div className="analytics-card">
+
+      <div className="analytics-icon">
+        🚦
+      </div>
+
+      <div>
+
+        <span>
+          Traffic Period
+        </span>
+
+        <h3>
+          {result
+            ? insights.trafficStatus
+            : "--"}
+        </h3>
+
+      </div>
+
+    </div>
+
+
+    {/* DAY TYPE */}
+
+    <div className="analytics-card">
+
+      <div className="analytics-icon">
+        📅
+      </div>
+
+      <div>
+
+        <span>
+          Day Type
+        </span>
+
+        <h3>
+          {result
+            ? insights.isWeekend
+              ? "Weekend"
+              : "Weekday"
+            : "--"}
+        </h3>
+
+      </div>
+
+    </div>
+
+
+    {/* TIME */}
+
+    <div className="analytics-card">
+
+      <div className="analytics-icon">
+        🕐
+      </div>
+
+      <div>
+
+        <span>
+          Trip Time
+        </span>
+
+        <h3>
+          {result
+            ? insights.isNight
+              ? "Night"
+              : "Daytime"
+            : "--"}
+        </h3>
+
+      </div>
+
+    </div>
+
+
+    {/* TRIP TYPE */}
+
+    <div className="analytics-card">
+
+      <div className="analytics-icon">
+        🛣️
+      </div>
+
+      <div>
+
+        <span>
+          Trip Category
+        </span>
+
+        <h3>
+          {result
+            ? insights.tripType
+            : "--"}
+        </h3>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  {/* SUMMARY */}
+
+  {result && (
+    <div className="insight-summary">
+
+      <div>
+
+        <strong>
+          🤖 AI Trip Analysis
+        </strong>
+
+        <p>
+
+          Your trip is classified as a{" "}
+          <b>
+            {insights.tripType.toLowerCase()}
+          </b>{" "}
+          during{" "}
+          <b>
+            {insights.trafficStatus.toLowerCase()}
+          </b>
+          .
+
+          {" "}
+
+          The predicted journey duration is{" "}
+
+          <b>
+            {result.duration_minutes} minutes
+          </b>
+
+          over approximately{" "}
+
+          <b>
+            {result.distance_km} km
+          </b>
+          .
+
+        </p>
+
+      </div>
+
+    </div>
+  )}
+
+</section>
 
         {/* ==========================================
             MODEL INFORMATION
