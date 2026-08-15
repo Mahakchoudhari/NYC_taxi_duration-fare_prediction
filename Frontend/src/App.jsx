@@ -28,7 +28,63 @@ L.Icon.Default.mergeOptions({
 });
 // Map Component
 
+// function TaxiMap({ formData }) {
+//   const pickup = [
+//     Number(formData.pickup_latitude),
+//     Number(formData.pickup_longitude),
+//   ];
+
+//   const dropoff = [
+//     Number(formData.dropoff_latitude),
+//     Number(formData.dropoff_longitude),
+//   ];
+
+//   const center = [
+//     (pickup[0] + dropoff[0]) / 2,
+//     (pickup[1] + dropoff[1]) / 2,
+//   ];
+
+//   return (
+//     <MapContainer
+//       center={center}
+//       zoom={13}
+//       scrollWheelZoom={true}
+//       className="taxi-map"
+//     >
+//       <TileLayer
+//         attribution='&copy; OpenStreetMap contributors'
+//         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+//       />
+
+//       <Marker position={pickup}>
+//         <Popup>
+//           🟢 <strong>Pickup</strong>
+//           <br />
+//           {pickup[0].toFixed(4)}, {pickup[1].toFixed(4)}
+//         </Popup>
+//       </Marker>
+
+//       <Marker position={dropoff}>
+//         <Popup>
+//           🔴 <strong>Dropoff</strong>
+//           <br />
+//           {dropoff[0].toFixed(4)}, {dropoff[1].toFixed(4)}
+//         </Popup>
+//       </Marker>
+
+//       <Polyline
+//         positions={[pickup, dropoff]}
+//       />
+//     </MapContainer>
+//   );
+// }
 function TaxiMap({ formData }) {
+  const [route, setRoute] = useState([]);
+  const [routeDistance, setRouteDistance] = useState(null);
+  const [routeDuration, setRouteDuration] = useState(null);
+  const [routeLoading, setRouteLoading] = useState(false);
+  const [routeError, setRouteError] = useState("");
+
   const pickup = [
     Number(formData.pickup_latitude),
     Number(formData.pickup_longitude),
@@ -44,38 +100,186 @@ function TaxiMap({ formData }) {
     (pickup[1] + dropoff[1]) / 2,
   ];
 
+  const getRoute = async () => {
+    setRouteLoading(true);
+    setRouteError("");
+
+    try {
+      const url =
+        `https://router.project-osrm.org/route/v1/driving/` +
+        `${pickup[1]},${pickup[0]};` +
+        `${dropoff[1]},${dropoff[0]}` +
+        `?overview=full&geometries=geojson`;
+
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error("Unable to fetch road route.");
+      }
+
+      const data = await response.json();
+
+      if (
+        !data.routes ||
+        data.routes.length === 0
+      ) {
+        throw new Error("No route found.");
+      }
+
+      const selectedRoute = data.routes[0];
+
+      const coordinates =
+        selectedRoute.geometry.coordinates.map(
+          ([longitude, latitude]) => [
+            latitude,
+            longitude,
+          ]
+        );
+
+      setRoute(coordinates);
+
+      setRouteDistance(
+        (selectedRoute.distance / 1000).toFixed(2)
+      );
+
+      setRouteDuration(
+        (selectedRoute.duration / 60).toFixed(1)
+      );
+
+    } catch (error) {
+      console.error("Route error:", error);
+      setRouteError(error.message);
+    } finally {
+      setRouteLoading(false);
+    }
+  };
+
   return (
-    <MapContainer
-      center={center}
-      zoom={13}
-      scrollWheelZoom={true}
-      className="taxi-map"
-    >
-      <TileLayer
-        attribution='&copy; OpenStreetMap contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
+    <div>
 
-      <Marker position={pickup}>
-        <Popup>
-          🟢 <strong>Pickup</strong>
-          <br />
-          {pickup[0].toFixed(4)}, {pickup[1].toFixed(4)}
-        </Popup>
-      </Marker>
+      <div className="route-controls">
 
-      <Marker position={dropoff}>
-        <Popup>
-          🔴 <strong>Dropoff</strong>
-          <br />
-          {dropoff[0].toFixed(4)}, {dropoff[1].toFixed(4)}
-        </Popup>
-      </Marker>
+        <button
+          type="button"
+          className="route-btn"
+          onClick={getRoute}
+          disabled={routeLoading}
+        >
+          {routeLoading
+            ? "⏳ Finding Route..."
+            : "🛣️ Show Road Route"}
+        </button>
 
-      <Polyline
-        positions={[pickup, dropoff]}
-      />
-    </MapContainer>
+        {routeDistance && (
+          <div className="route-info">
+
+            <div>
+              <strong>
+                {routeDistance} km
+              </strong>
+
+              <span>
+                Road Distance
+              </span>
+            </div>
+
+            <div>
+              <strong>
+                {routeDuration} min
+              </strong>
+
+              <span>
+                Route Time
+              </span>
+            </div>
+
+          </div>
+        )}
+
+      </div>
+
+      {routeError && (
+        <div className="route-error">
+          ❌ {routeError}
+        </div>
+      )}
+
+      <MapContainer
+        center={center}
+        zoom={13}
+        scrollWheelZoom={true}
+        className="taxi-map"
+      >
+
+        <TileLayer
+          attribution="&copy; OpenStreetMap contributors"
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+
+        {/* PICKUP */}
+
+        <Marker position={pickup}>
+
+          <Popup>
+
+            <strong>
+              🟢 Pickup Location
+            </strong>
+
+            <br />
+
+            Latitude:
+            {pickup[0].toFixed(4)}
+
+            <br />
+
+            Longitude:
+            {pickup[1].toFixed(4)}
+
+          </Popup>
+
+        </Marker>
+
+
+        {/* DROPOFF */}
+
+        <Marker position={dropoff}>
+
+          <Popup>
+
+            <strong>
+              🔴 Dropoff Location
+            </strong>
+
+            <br />
+
+            Latitude:
+            {dropoff[0].toFixed(4)}
+
+            <br />
+
+            Longitude:
+            {dropoff[1].toFixed(4)}
+
+          </Popup>
+
+        </Marker>
+
+
+        {/* ACTUAL ROAD ROUTE */}
+
+        {route.length > 0 && (
+          <Polyline
+            positions={route}
+            pathOptions={{
+              weight: 6,
+            }}
+          />
+        )}
+
+      </MapContainer>
+
+    </div>
   );
 }
 function App() {
