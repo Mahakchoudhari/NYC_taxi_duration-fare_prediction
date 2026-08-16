@@ -26,6 +26,140 @@ L.Icon.Default.mergeOptions({
 });
 
 /* =========================================================
+   ICON SET
+   One small stroke-icon system instead of emoji, so every
+   glyph shares weight, size and color with the rest of the UI.
+========================================================= */
+
+function Icon({ name, className = "" }) {
+  const common = {
+    className: `icon-svg ${className}`,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.8,
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+  };
+
+  switch (name) {
+    case "taxi":
+      return (
+        <svg {...common}>
+          <path d="M5 16h14l-1.4-5.6a2 2 0 0 0-1.94-1.4H8.34a2 2 0 0 0-1.94 1.4L5 16Z" />
+          <path d="M7 16v2.2a.8.8 0 0 1-.8.8H5a1 1 0 0 1-1-1v-2" />
+          <path d="M17 16v2.2a.8.8 0 0 0 .8.8H19a1 1 0 0 0 1-1v-2" />
+          <circle cx="8" cy="16.5" r="1.3" />
+          <circle cx="16" cy="16.5" r="1.3" />
+          <path d="M9 9V6.5A1.5 1.5 0 0 1 10.5 5h3A1.5 1.5 0 0 1 15 6.5V9" />
+        </svg>
+      );
+    case "pulse":
+      return (
+        <svg {...common}>
+          <path d="M3 12h4l2 7 4-14 2 7h6" />
+        </svg>
+      );
+    case "pin":
+      return (
+        <svg {...common}>
+          <path d="M12 21s7-6.1 7-11.5A7 7 0 0 0 5 9.5C5 14.9 12 21 12 21Z" />
+          <circle cx="12" cy="9.5" r="2.4" />
+        </svg>
+      );
+    case "route":
+      return (
+        <svg {...common}>
+          <circle cx="6" cy="19" r="2" />
+          <circle cx="18" cy="5" r="2" />
+          <path d="M8 19h7a3 3 0 0 0 3-3v-1a3 3 0 0 0-3-3H9a3 3 0 0 1-3-3V8a3 3 0 0 1 3-3h7" />
+        </svg>
+      );
+    case "compass":
+      return (
+        <svg {...common}>
+          <circle cx="12" cy="12" r="9" />
+          <path d="M14.8 9.2 13 13l-3.8 1.8L11 11l3.8-1.8Z" />
+        </svg>
+      );
+    case "alert":
+      return (
+        <svg {...common}>
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 8v5" />
+          <path d="M12 16h.01" />
+        </svg>
+      );
+    case "clock":
+      return (
+        <svg {...common}>
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 7v5l3.5 2" />
+        </svg>
+      );
+    case "dollar":
+      return (
+        <svg {...common}>
+          <path d="M12 3v18" />
+          <path d="M16.5 7.5a3.5 3.5 0 0 0-3.5-2H11a3 3 0 0 0 0 6h2a3 3 0 0 1 0 6h-2a3.5 3.5 0 0 1-3.5-2" />
+        </svg>
+      );
+    case "ruler":
+      return (
+        <svg {...common}>
+          <rect x="3" y="8" width="18" height="8" rx="1.5" />
+          <path d="M7 8v3M11 8v3M15 8v3" />
+        </svg>
+      );
+    case "gauge":
+      return (
+        <svg {...common}>
+          <path d="M4 15a8 8 0 1 1 16 0" />
+          <path d="M12 15l3.5-4.5" />
+          <path d="M12 15h.01" />
+        </svg>
+      );
+    case "download":
+      return (
+        <svg {...common}>
+          <path d="M12 4v11" />
+          <path d="M7.5 11.5 12 16l4.5-4.5" />
+          <path d="M5 19h14" />
+        </svg>
+      );
+    case "traffic":
+      return (
+        <svg {...common}>
+          <rect x="8" y="3" width="8" height="14" rx="3" />
+          <path d="M9 6h.01M12 9.5h.01M15 13h.01" />
+          <path d="M11 20h2" />
+        </svg>
+      );
+    case "calendar":
+      return (
+        <svg {...common}>
+          <rect x="3.5" y="5" width="17" height="15" rx="2" />
+          <path d="M3.5 10h17" />
+          <path d="M8 3v4M16 3v4" />
+        </svg>
+      );
+    case "spark":
+      return (
+        <svg {...common}>
+          <path d="M12 3v4M12 17v4M3 12h4M17 12h4" />
+          <path d="M6 6l2.5 2.5M17.5 15.5 20 18M18 6l-2.5 2.5M8.5 15.5 6 18" />
+        </svg>
+      );
+    default:
+      return null;
+  }
+}
+
+function Spinner({ className = "" }) {
+  return <span className={`spinner ${className}`} aria-hidden="true" />;
+}
+
+/* =========================================================
    MAP AUTO FIT COMPONENT
 ========================================================= */
 
@@ -96,24 +230,30 @@ function TaxiMap({ formData }) {
       {/* ROUTE CONTROLS */}
       <div className="route-controls">
         <button type="button" className="route-btn" onClick={getRoute} disabled={routeLoading}>
-          {routeLoading ? "⏳ Finding Route..." : "🛣️ Show Road Route"}
+          {routeLoading ? <Spinner className="spinner-dark" /> : <Icon name="route" />}
+          {routeLoading ? "Finding route" : "Show road route"}
         </button>
 
         {routeDistance && (
           <div className="route-info">
             <div>
               <strong>{routeDistance} km</strong>
-              <span>Road Distance</span>
+              <span>Road distance</span>
             </div>
             <div>
               <strong>{routeDuration} min</strong>
-              <span>Route Time</span>
+              <span>Route time</span>
             </div>
           </div>
         )}
       </div>
 
-      {routeError && <div className="route-error">❌ {routeError}</div>}
+      {routeError && (
+        <div className="route-error">
+          <Icon name="alert" className="icon-inline" />
+          {routeError}
+        </div>
+      )}
 
       {/* MAP */}
       <MapContainer
@@ -132,7 +272,7 @@ function TaxiMap({ formData }) {
 
         <Marker position={pickup}>
           <Popup>
-            <strong>🟢 Pickup Location</strong>
+            <strong>Pickup location</strong>
             <br />
             Latitude: {pickup[0].toFixed(4)}
             <br />
@@ -142,7 +282,7 @@ function TaxiMap({ formData }) {
 
         <Marker position={dropoff}>
           <Popup>
-            <strong>🔴 Dropoff Location</strong>
+            <strong>Dropoff location</strong>
             <br />
             Latitude: {dropoff[0].toFixed(4)}
             <br />
@@ -169,16 +309,16 @@ function getTripInsights(formData, result) {
   const isRushHour = [7, 8, 9, 10, 16, 17, 18, 19, 20].includes(hour);
   const isNight = hour >= 22 || hour <= 4;
 
-  let tripType = "Short Trip";
+  let tripType = "Short trip";
   if (result?.distance_km) {
     const distance = Number(result.distance_km);
-    if (distance >= 10) tripType = "Long Trip";
-    else if (distance >= 5) tripType = "Medium Trip";
+    if (distance >= 10) tripType = "Long trip";
+    else if (distance >= 5) tripType = "Medium trip";
   }
 
-  let trafficStatus = "Normal Traffic";
-  if (isRushHour) trafficStatus = "Peak Hours";
-  else if (isNight) trafficStatus = "Night Hours";
+  let trafficStatus = "Normal traffic";
+  if (isRushHour) trafficStatus = "Peak hours";
+  else if (isNight) trafficStatus = "Night hours";
 
   return { hour, isWeekend, isRushHour, isNight, tripType, trafficStatus };
 }
@@ -209,13 +349,6 @@ function App() {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
-
-  /* =====================================================
-     DOWNLOAD REPORT (moved to component scope — this was
-     the bug causing the white screen: it was previously
-     declared inside handleSubmit, so the button's
-     onClick={downloadReport} couldn't find it.)
-  ===================================================== */
 
   const downloadReport = () => {
     if (!result) return;
@@ -345,7 +478,8 @@ Machine Learning Prediction System
       {/* NAVBAR */}
       <nav className="navbar">
         <div className="logo">
-          🚕 NYC<span>Ride</span>
+          <Icon name="taxi" className="logo-icon" />
+          NYC<span>Ride</span>
         </div>
         <div className="nav-links">
           <a href="#predict">Predict</a>
@@ -357,9 +491,12 @@ Machine Learning Prediction System
       {/* HERO */}
       <section className="hero">
         <div className="hero-content">
-          <div className="badge">⚡ AI-Powered Taxi Prediction</div>
+          <div className="badge">
+            <Icon name="pulse" className="icon-inline" />
+            AI-powered taxi prediction
+          </div>
           <h1>
-            Predict Your <span>NYC Taxi Trip</span>
+            Predict your <span>NYC taxi trip</span>
           </h1>
           <p>
             Estimate trip duration, fare, distance and average speed using a
@@ -373,15 +510,17 @@ Machine Learning Prediction System
         <section className="card">
           <div className="card-header">
             <div>
-              <h2>Trip Details</h2>
+              <h2>Trip details</h2>
               <p>Enter your pickup and dropoff information</p>
             </div>
-            <span className="icon">📍</span>
+            <span className="icon">
+              <Icon name="pin" />
+            </span>
           </div>
 
           <form onSubmit={handleSubmit}>
             <div className="form-group full">
-              <label>Pickup Date & Time</label>
+              <label>Pickup date & time</label>
               <input
                 type="datetime-local"
                 name="pickup_datetime"
@@ -392,7 +531,10 @@ Machine Learning Prediction System
             </div>
 
             <div className="location-section">
-              <h3>🟢 Pickup Location</h3>
+              <h3>
+                <Icon name="pin" className="icon-inline icon-pickup" />
+                Pickup location
+              </h3>
               <div className="grid">
                 <div className="form-group">
                   <label>Latitude</label>
@@ -420,7 +562,10 @@ Machine Learning Prediction System
             </div>
 
             <div className="location-section">
-              <h3>🔴 Dropoff Location</h3>
+              <h3>
+                <Icon name="pin" className="icon-inline icon-dropoff" />
+                Dropoff location
+              </h3>
               <div className="grid">
                 <div className="form-group">
                   <label>Latitude</label>
@@ -472,7 +617,7 @@ Machine Learning Prediction System
               </div>
 
               <div className="form-group">
-                <label>Store & Forward</label>
+                <label>Store & forward</label>
                 <select
                   name="store_and_fwd_flag"
                   value={formData.store_and_fwd_flag}
@@ -484,10 +629,16 @@ Machine Learning Prediction System
               </div>
             </div>
 
-            {error && <div className="error-message">❌ {error}</div>}
+            {error && (
+              <div className="error-message">
+                <Icon name="alert" className="icon-inline" />
+                {error}
+              </div>
+            )}
 
             <button className="predict-btn" type="submit" disabled={loading}>
-              {loading ? "⏳ Predicting..." : "🔮 Predict Trip"}
+              {loading ? <Spinner /> : <Icon name="compass" />}
+              {loading ? "Predicting" : "Predict trip"}
             </button>
           </form>
         </section>
@@ -495,43 +646,43 @@ Machine Learning Prediction System
         {/* RESULTS */}
         <section className="result-section" id="results">
           <div className="section-title">
-            <h2>Prediction Results</h2>
+            <h2>Prediction results</h2>
             <p>AI-generated estimates for your trip</p>
           </div>
 
           {loading && (
             <div className="prediction-loading">
-              <div className="loading-spinner"></div>
-              <p>AI is analyzing your trip...</p>
+              <Spinner className="spinner-lg" />
+              <p>Analyzing your trip</p>
               <span>Calculating duration, distance and fare</span>
             </div>
           )}
 
           <div className="result-grid">
             <div className="result-card">
-              <div className="result-icon">⏱️</div>
+              <Icon name="clock" className="result-icon" />
               <p>Duration</p>
               <h3>{result ? result.duration_minutes : "--"}</h3>
               <span>minutes</span>
             </div>
 
             <div className="result-card">
-              <div className="result-icon">💵</div>
-              <p>Estimated Fare</p>
+              <Icon name="dollar" className="result-icon" />
+              <p>Estimated fare</p>
               <h3>{result ? `$${result.estimated_fare}` : "--"}</h3>
               <span>USD</span>
             </div>
 
             <div className="result-card">
-              <div className="result-icon">📍</div>
+              <Icon name="ruler" className="result-icon" />
               <p>Distance</p>
               <h3>{result ? result.distance_km : "--"}</h3>
               <span>kilometers</span>
             </div>
 
             <div className="result-card">
-              <div className="result-icon">🚀</div>
-              <p>Average Speed</p>
+              <Icon name="gauge" className="result-icon" />
+              <p>Average speed</p>
               <h3>{result ? result.estimated_speed : "--"}</h3>
               <span>km/h</span>
             </div>
@@ -540,7 +691,8 @@ Machine Learning Prediction System
           {result && (
             <div className="report-container">
               <button type="button" className="report-btn" onClick={downloadReport}>
-                📄 Download Trip Report
+                <Icon name="download" />
+                Download trip report
               </button>
             </div>
           )}
@@ -549,39 +701,47 @@ Machine Learning Prediction System
         {/* TRIP INSIGHTS */}
         <section className="analytics-section" id="analytics">
           <div className="section-title">
-            <h2>Trip Insights</h2>
+            <h2>Trip insights</h2>
             <p>Intelligent analysis based on your trip details</p>
           </div>
 
           <div className="analytics-grid">
             <div className="analytics-card">
-              <div className="analytics-icon">🚦</div>
+              <div className="analytics-icon">
+                <Icon name="traffic" />
+              </div>
               <div>
-                <span>Traffic Period</span>
+                <span>Traffic period</span>
                 <h3>{result ? insights.trafficStatus : "--"}</h3>
               </div>
             </div>
 
             <div className="analytics-card">
-              <div className="analytics-icon">📅</div>
+              <div className="analytics-icon">
+                <Icon name="calendar" />
+              </div>
               <div>
-                <span>Day Type</span>
+                <span>Day type</span>
                 <h3>{result ? (insights.isWeekend ? "Weekend" : "Weekday") : "--"}</h3>
               </div>
             </div>
 
             <div className="analytics-card">
-              <div className="analytics-icon">🕐</div>
+              <div className="analytics-icon">
+                <Icon name="clock" />
+              </div>
               <div>
-                <span>Trip Time</span>
+                <span>Trip time</span>
                 <h3>{result ? (insights.isNight ? "Night" : "Daytime") : "--"}</h3>
               </div>
             </div>
 
             <div className="analytics-card">
-              <div className="analytics-icon">🛣️</div>
+              <div className="analytics-icon">
+                <Icon name="route" />
+              </div>
               <div>
-                <span>Trip Category</span>
+                <span>Trip category</span>
                 <h3>{result ? insights.tripType : "--"}</h3>
               </div>
             </div>
@@ -590,7 +750,10 @@ Machine Learning Prediction System
           {result && (
             <div className="insight-summary">
               <div>
-                <strong>🤖 AI Trip Analysis</strong>
+                <strong>
+                  <Icon name="spark" className="icon-inline" />
+                  AI trip analysis
+                </strong>
                 <p>
                   Your trip is classified as a{" "}
                   <b>{insights.tripType.toLowerCase()}</b> during{" "}
@@ -606,7 +769,7 @@ Machine Learning Prediction System
         {/* MAP */}
         <section className="map-section">
           <div className="section-title">
-            <h2>Trip Route</h2>
+            <h2>Trip route</h2>
             <p>Pickup and dropoff locations</p>
           </div>
           <div className="map-card">
@@ -617,8 +780,8 @@ Machine Learning Prediction System
         {/* MODEL INFO */}
         <section className="model-section" id="model">
           <div>
-            <span className="small-label">MACHINE LEARNING MODEL</span>
-            <h2>XGBoost Regression</h2>
+            <span className="small-label">Machine learning model</span>
+            <h2>XGBoost regression</h2>
             <p>
               The prediction system uses a tuned XGBoost model trained on more
               than 1.45 million NYC taxi trips.
@@ -642,8 +805,8 @@ Machine Learning Prediction System
         </section>
       </main>
 
-      <footer>
-        <p>NYC Ride • Machine Learning Prediction System</p>
+      <footer className="footer">
+        <p>NYC Ride &middot; Machine learning prediction system</p>
       </footer>
     </div>
   );
