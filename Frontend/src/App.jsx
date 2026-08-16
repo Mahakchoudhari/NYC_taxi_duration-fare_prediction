@@ -29,6 +29,9 @@ import {
   Legend,
 } from "recharts";
 
+import jsPDF from "jspdf";
+
+
 /* =========================================================
    LEAFLET MARKER FIX
 ========================================================= */
@@ -252,20 +255,12 @@ function LocationSearch({
   onSelect,
 }) {
 
-  const [suggestions, setSuggestions] =
-    useState([]);
+  const [suggestions, setSuggestions] = useState([]);
+  const [open, setOpen] = useState(false);
+  const [searching, setSearching] = useState(false);
 
-  const [open, setOpen] =
-    useState(false);
-
-  const [searching, setSearching] =
-    useState(false);
-
-  const debounceRef =
-    useRef(null);
-
-  const wrapRef =
-    useRef(null);
+  const debounceRef = useRef(null);
+  const wrapRef = useRef(null);
 
 
   useEffect(() => {
@@ -275,59 +270,49 @@ function LocationSearch({
     }
 
     if (!query || query.trim().length < 3) {
-
       setSuggestions([]);
       setSearching(false);
-
       return;
     }
 
-    debounceRef.current =
-      setTimeout(async () => {
+    debounceRef.current = setTimeout(async () => {
 
-        setSearching(true);
+      setSearching(true);
 
-        try {
+      try {
 
-          const url =
-            `https://nominatim.openstreetmap.org/search?format=json&addressdetails=0` +
-            `&limit=5&countrycodes=us&viewbox=${NYC_VIEWBOX}&bounded=1` +
-            `&q=${encodeURIComponent(query)}`;
+        const url =
+          `https://nominatim.openstreetmap.org/search?format=json&addressdetails=0` +
+          `&limit=5&countrycodes=us&viewbox=${NYC_VIEWBOX}&bounded=1` +
+          `&q=${encodeURIComponent(query)}`;
 
-          const res =
-            await fetch(url);
+        const res = await fetch(url);
+        const data = await res.json();
 
-          const data =
-            await res.json();
+        setSuggestions(
+          Array.isArray(data) ? data : []
+        );
 
-          setSuggestions(
-            Array.isArray(data)
-              ? data
-              : []
-          );
+      } catch (err) {
 
-        } catch (err) {
+        console.error(
+          "Location search error:",
+          err
+        );
 
-          console.error(
-            "Location search error:",
-            err
-          );
+        setSuggestions([]);
 
-          setSuggestions([]);
+      } finally {
 
-        } finally {
+        setSearching(false);
 
-          setSearching(false);
+      }
 
-        }
-
-      }, 450);
+    }, 450);
 
 
     return () =>
-      clearTimeout(
-        debounceRef.current
-      );
+      clearTimeout(debounceRef.current);
 
   }, [query]);
 
@@ -340,9 +325,7 @@ function LocationSearch({
         wrapRef.current &&
         !wrapRef.current.contains(e.target)
       ) {
-
         setOpen(false);
-
       }
 
     };
@@ -377,9 +360,7 @@ function LocationSearch({
   const handleSelect = (item) => {
 
     onQueryChange(
-      shortLabel(
-        item.display_name
-      )
+      shortLabel(item.display_name)
     );
 
     onSelect(
@@ -421,10 +402,7 @@ function LocationSearch({
           value={query}
           onChange={(e) => {
 
-            onQueryChange(
-              e.target.value
-            );
-
+            onQueryChange(e.target.value);
             setOpen(true);
 
           }}
@@ -435,16 +413,12 @@ function LocationSearch({
         />
 
         {searching ? (
-
           <Spinner />
-
         ) : (
-
           <Icon
             name="search"
             className="icon-inline search-hint"
           />
-
         )}
 
       </div>
@@ -455,27 +429,25 @@ function LocationSearch({
 
           <ul className="location-suggestions">
 
-            {suggestions.map(
-              (item) => (
+            {suggestions.map((item) => (
 
-                <li
-                  key={item.place_id}
-                  onMouseDown={() =>
-                    handleSelect(item)
-                  }
-                >
+              <li
+                key={item.place_id}
+                onMouseDown={() =>
+                  handleSelect(item)
+                }
+              >
 
-                  <Icon
-                    name="pin"
-                    className="icon-inline"
-                  />
+                <Icon
+                  name="pin"
+                  className="icon-inline"
+                />
 
-                  {item.display_name}
+                {item.display_name}
 
-                </li>
+              </li>
 
-              )
-            )}
+            ))}
 
           </ul>
 
@@ -550,39 +522,21 @@ function TaxiMap({
   formData,
 }) {
 
-  const [route, setRoute] =
-    useState([]);
-
-  const [routeDistance, setRouteDistance] =
-    useState(null);
-
-  const [routeDuration, setRouteDuration] =
-    useState(null);
-
-  const [routeLoading, setRouteLoading] =
-    useState(false);
-
-  const [routeError, setRouteError] =
-    useState("");
+  const [route, setRoute] = useState([]);
+  const [routeDistance, setRouteDistance] = useState(null);
+  const [routeDuration, setRouteDuration] = useState(null);
+  const [routeLoading, setRouteLoading] = useState(false);
+  const [routeError, setRouteError] = useState("");
 
 
   const pickup = [
-    Number(
-      formData.pickup_latitude
-    ),
-    Number(
-      formData.pickup_longitude
-    ),
+    Number(formData.pickup_latitude),
+    Number(formData.pickup_longitude),
   ];
 
-
   const dropoff = [
-    Number(
-      formData.dropoff_latitude
-    ),
-    Number(
-      formData.dropoff_longitude
-    ),
+    Number(formData.dropoff_latitude),
+    Number(formData.dropoff_longitude),
   ];
 
 
@@ -608,48 +562,33 @@ function TaxiMap({
         await fetch(url);
 
       if (!response.ok) {
-
         throw new Error(
           "Unable to fetch road route."
         );
-
       }
-
 
       const data =
         await response.json();
-
 
       if (
         !data.routes ||
         data.routes.length === 0
       ) {
-
         throw new Error(
           "No route found between these locations."
         );
-
       }
-
 
       const selectedRoute =
         data.routes[0];
 
-
       const coordinates =
         selectedRoute.geometry.coordinates.map(
           ([longitude, latitude]) =>
-            [
-              latitude,
-              longitude,
-            ]
+            [latitude, longitude]
         );
 
-
-      setRoute(
-        coordinates
-      );
-
+      setRoute(coordinates);
 
       setRouteDistance(
         (
@@ -657,13 +596,11 @@ function TaxiMap({
         ).toFixed(2)
       );
 
-
       setRouteDuration(
         (
           selectedRoute.duration / 60
         ).toFixed(1)
       );
-
 
     } catch (error) {
 
@@ -700,13 +637,9 @@ function TaxiMap({
         >
 
           {routeLoading ? (
-
             <Spinner className="spinner-dark" />
-
           ) : (
-
             <Icon name="route" />
-
           )}
 
           {routeLoading
@@ -872,9 +805,7 @@ function getTripInsights(
 ) {
 
   const date =
-    new Date(
-      pickupDatetime
-    );
+    new Date(pickupDatetime);
 
   const hour =
     date.getHours();
@@ -882,11 +813,9 @@ function getTripInsights(
   const day =
     date.getDay();
 
-
   const isWeekend =
     day === 0 ||
     day === 6;
-
 
   const isRushHour =
     [
@@ -901,11 +830,9 @@ function getTripInsights(
       20,
     ].includes(hour);
 
-
   const isNight =
     hour >= 22 ||
     hour <= 4;
-
 
   let tripType =
     "Short trip";
@@ -914,9 +841,7 @@ function getTripInsights(
   if (result?.distance_km) {
 
     const distance =
-      Number(
-        result.distance_km
-      );
+      Number(result.distance_km);
 
     if (distance >= 10) {
 
@@ -1117,12 +1042,8 @@ function App() {
   const fetchAnalytics =
     async () => {
 
-      setAnalyticsLoading(
-        true
-      );
-
+      setAnalyticsLoading(true);
       setAnalyticsError("");
-
 
       try {
 
@@ -1131,10 +1052,8 @@ function App() {
             "http://127.0.0.1:8000/analytics"
           );
 
-
         const data =
           await response.json();
-
 
         if (!response.ok) {
 
@@ -1146,7 +1065,6 @@ function App() {
 
         }
 
-
         if (!data.success) {
 
           throw new Error(
@@ -1156,11 +1074,7 @@ function App() {
 
         }
 
-
-        setAnalyticsData(
-          data
-        );
-
+        setAnalyticsData(data);
 
       } catch (err) {
 
@@ -1169,18 +1083,14 @@ function App() {
           err
         );
 
-
         setAnalyticsError(
           err.message ||
           "Unable to load analytics."
         );
 
-
       } finally {
 
-        setAnalyticsLoading(
-          false
-        );
+        setAnalyticsLoading(false);
 
       }
 
@@ -1188,115 +1098,1167 @@ function App() {
 
 
   /* =======================================================
-     DOWNLOAD REPORT
+     PROFESSIONAL PDF REPORT
   ======================================================= */
 
   const downloadReport =
     () => {
 
-      if (!result) return;
+      if (!result) {
+        return;
+      }
 
 
-      const report = `
-========================================
-        NYC RIDE - TRIP REPORT
-========================================
-
-TRIP DETAILS
-----------------------------------------
-Pickup Date & Time : ${pickupDatetime}
-
-Pickup Location
-${pickupQuery
-  ? `Place             : ${pickupQuery}`
-  : ""}
-Latitude          : ${formData.pickup_latitude}
-Longitude         : ${formData.pickup_longitude}
-
-Dropoff Location
-${dropoffQuery
-  ? `Place             : ${dropoffQuery}`
-  : ""}
-Latitude          : ${formData.dropoff_latitude}
-Longitude         : ${formData.dropoff_longitude}
-
-Vendor ID         : ${formData.vendor_id}
-Passengers        : ${formData.passenger_count}
-Store & Forward   : ${formData.store_and_fwd_flag}
-
-PREDICTION RESULTS
-----------------------------------------
-Predicted Duration : ${result.duration_minutes} minutes
-Estimated Fare     : $${result.estimated_fare}
-Distance           : ${result.distance_km} km
-Average Speed      : ${result.estimated_speed} km/h
-
-TRIP INSIGHTS
-----------------------------------------
-Traffic Period     : ${insights.trafficStatus}
-Day Type           : ${
-  insights.isWeekend
-    ? "Weekend"
-    : "Weekday"
-}
-Trip Time          : ${
-  insights.isNight
-    ? "Night"
-    : "Daytime"
-}
-Trip Category      : ${insights.tripType}
-
-========================================
-Generated by NYC Ride
-Machine Learning Prediction System
-========================================
-`;
+      const doc =
+        new jsPDF({
+          orientation: "portrait",
+          unit: "mm",
+          format: "a4",
+        });
 
 
-      const blob =
-        new Blob(
-          [report],
+      const pageWidth =
+        doc.internal.pageSize.getWidth();
+
+      const pageHeight =
+        doc.internal.pageSize.getHeight();
+
+
+      const margin = 16;
+
+      let y = 16;
+
+
+      /* ===================================================
+         COLORS
+      =================================================== */
+
+      const navy = [20, 35, 55];
+      const blue = [37, 99, 235];
+      const lightBlue = [239, 246, 255];
+      const gray = [100, 116, 139];
+      const lightGray = [241, 245, 249];
+      const dark = [15, 23, 42];
+      const green = [22, 163, 74];
+
+
+      /* ===================================================
+         HELPER FUNCTIONS
+      =================================================== */
+
+      const addPageIfNeeded = (
+        requiredHeight = 20
+      ) => {
+
+        if (
+          y + requiredHeight >
+          pageHeight - 18
+        ) {
+
+          doc.addPage();
+
+          y = 18;
+
+          addFooter();
+
+        }
+
+      };
+
+
+      const addFooter = () => {
+
+        doc.setFontSize(8);
+
+        doc.setTextColor(
+          148,
+          163,
+          184
+        );
+
+        doc.text(
+          "NYC Ride • Machine Learning Prediction System",
+          margin,
+          pageHeight - 9
+        );
+
+        doc.text(
+          `Page ${doc.getNumberOfPages()}`,
+          pageWidth - margin,
+          pageHeight - 9,
           {
-            type: "text/plain",
+            align: "right",
           }
         );
 
+      };
 
-      const url =
-        URL.createObjectURL(
-          blob
+
+      const sectionTitle = (
+        title,
+        subtitle = ""
+      ) => {
+
+        addPageIfNeeded(18);
+
+        doc.setFillColor(
+          ...blue
         );
 
-
-      const link =
-        document.createElement(
-          "a"
+        doc.roundedRect(
+          margin,
+          y,
+          2,
+          9,
+          1,
+          1,
+          "F"
         );
 
+        doc.setFont(
+          "helvetica",
+          "bold"
+        );
 
-      link.href =
-        url;
+        doc.setFontSize(14);
+
+        doc.setTextColor(
+          ...dark
+        );
+
+        doc.text(
+          title,
+          margin + 6,
+          y + 6
+        );
+
+        if (subtitle) {
+
+          doc.setFont(
+            "helvetica",
+            "normal"
+          );
+
+          doc.setFontSize(8.5);
+
+          doc.setTextColor(
+            ...gray
+          );
+
+          doc.text(
+            subtitle,
+            margin + 6,
+            y + 11
+          );
+
+          y += 17;
+
+        } else {
+
+          y += 13;
+
+        }
+
+      };
 
 
-      link.download =
-        "NYC_Ride_Trip_Report.txt";
+      const drawInfoRow = (
+        label,
+        value,
+        x,
+        width
+      ) => {
+
+        doc.setFillColor(
+          ...lightGray
+        );
+
+        doc.roundedRect(
+          x,
+          y,
+          width,
+          13,
+          2,
+          2,
+          "F"
+        );
+
+        doc.setFont(
+          "helvetica",
+          "normal"
+        );
+
+        doc.setFontSize(7.5);
+
+        doc.setTextColor(
+          ...gray
+        );
+
+        doc.text(
+          label.toUpperCase(),
+          x + 4,
+          y + 4.5
+        );
+
+        doc.setFont(
+          "helvetica",
+          "bold"
+        );
+
+        doc.setFontSize(10);
+
+        doc.setTextColor(
+          ...dark
+        );
+
+        doc.text(
+          String(value),
+          x + 4,
+          y + 10
+        );
+
+      };
 
 
-      document.body.appendChild(
-        link
+      const drawMetricCard = (
+        x,
+        width,
+        label,
+        value,
+        unit
+      ) => {
+
+        doc.setFillColor(
+          248,
+          250,
+          252
+        );
+
+        doc.setDrawColor(
+          226,
+          232,
+          240
+        );
+
+        doc.roundedRect(
+          x,
+          y,
+          width,
+          27,
+          3,
+          3,
+          "FD"
+        );
+
+        doc.setFont(
+          "helvetica",
+          "normal"
+        );
+
+        doc.setFontSize(8);
+
+        doc.setTextColor(
+          ...gray
+        );
+
+        doc.text(
+          label,
+          x + 5,
+          y + 7
+        );
+
+        doc.setFont(
+          "helvetica",
+          "bold"
+        );
+
+        doc.setFontSize(17);
+
+        doc.setTextColor(
+          ...dark
+        );
+
+        doc.text(
+          String(value),
+          x + 5,
+          y + 17
+        );
+
+        doc.setFont(
+          "helvetica",
+          "normal"
+        );
+
+        doc.setFontSize(7.5);
+
+        doc.setTextColor(
+          ...gray
+        );
+
+        doc.text(
+          unit,
+          x + 5,
+          y + 23
+        );
+
+      };
+
+
+      const drawLabelValue = (
+        label,
+        value,
+        x,
+        valueX
+      ) => {
+
+        doc.setFont(
+          "helvetica",
+          "bold"
+        );
+
+        doc.setFontSize(9);
+
+        doc.setTextColor(
+          ...gray
+        );
+
+        doc.text(
+          label,
+          x,
+          y
+        );
+
+        doc.setFont(
+          "helvetica",
+          "normal"
+        );
+
+        doc.setTextColor(
+          ...dark
+        );
+
+        doc.text(
+          String(value),
+          valueX,
+          y
+        );
+
+        y += 7;
+
+      };
+
+
+      /* ===================================================
+         HEADER
+      =================================================== */
+
+      doc.setFillColor(
+        ...navy
+      );
+
+      doc.rect(
+        0,
+        0,
+        pageWidth,
+        42,
+        "F"
       );
 
 
-      link.click();
+      doc.setFont(
+        "helvetica",
+        "bold"
+      );
 
+      doc.setFontSize(24);
 
-      document.body.removeChild(
-        link
+      doc.setTextColor(
+        255,
+        255,
+        255
+      );
+
+      doc.text(
+        "NYC Ride",
+        margin,
+        17
       );
 
 
-      URL.revokeObjectURL(
-        url
+      doc.setFont(
+        "helvetica",
+        "normal"
+      );
+
+      doc.setFontSize(10);
+
+      doc.setTextColor(
+        203,
+        213,
+        225
+      );
+
+      doc.text(
+        "Machine Learning Trip Prediction Report",
+        margin,
+        25
+      );
+
+
+      doc.setFontSize(8);
+
+      doc.text(
+        "AI-powered NYC taxi trip analysis",
+        margin,
+        32
+      );
+
+
+      doc.setFillColor(
+        ...blue
+      );
+
+      doc.roundedRect(
+        pageWidth - 53,
+        12,
+        37,
+        14,
+        3,
+        3,
+        "F"
+      );
+
+
+      doc.setFont(
+        "helvetica",
+        "bold"
+      );
+
+      doc.setFontSize(8);
+
+      doc.setTextColor(
+        255,
+        255,
+        255
+      );
+
+      doc.text(
+        "TRIP REPORT",
+        pageWidth - 34.5,
+        20.5,
+        {
+          align: "center",
+        }
+      );
+
+
+      y = 53;
+
+
+      /* ===================================================
+         REPORT META
+      =================================================== */
+
+      doc.setFont(
+        "helvetica",
+        "normal"
+      );
+
+      doc.setFontSize(8);
+
+      doc.setTextColor(
+        ...gray
+      );
+
+      const generatedAt =
+        new Date().toLocaleString(
+          "en-IN"
+        );
+
+      doc.text(
+        `Generated: ${generatedAt}`,
+        margin,
+        y
+      );
+
+      y += 9;
+
+
+      /* ===================================================
+         PREDICTION SUMMARY
+      =================================================== */
+
+      sectionTitle(
+        "Prediction Summary",
+        "AI-generated estimates for the selected NYC taxi trip"
+      );
+
+
+      const cardGap = 4;
+
+      const cardWidth =
+        (
+          pageWidth -
+          margin * 2 -
+          cardGap * 3
+        ) / 4;
+
+
+      drawMetricCard(
+        margin,
+        cardWidth,
+        "DURATION",
+        result.duration_minutes,
+        "minutes"
+      );
+
+
+      drawMetricCard(
+        margin +
+          (cardWidth + cardGap),
+        cardWidth,
+        "ESTIMATED FARE",
+        `$${result.estimated_fare}`,
+        "USD"
+      );
+
+
+      drawMetricCard(
+        margin +
+          (cardWidth + cardGap) * 2,
+        cardWidth,
+        "DISTANCE",
+        result.distance_km,
+        "kilometers"
+      );
+
+
+      drawMetricCard(
+        margin +
+          (cardWidth + cardGap) * 3,
+        cardWidth,
+        "AVERAGE SPEED",
+        result.estimated_speed,
+        "km/h"
+      );
+
+
+      y += 36;
+
+
+      /* ===================================================
+         TRIP DETAILS
+      =================================================== */
+
+      sectionTitle(
+        "Trip Details",
+        "Input parameters submitted to the prediction API"
+      );
+
+
+      const halfWidth =
+        (
+          pageWidth -
+          margin * 2 -
+          5
+        ) / 2;
+
+
+      drawInfoRow(
+        "Pickup Date",
+        formData.pickup_date,
+        margin,
+        halfWidth
+      );
+
+      drawInfoRow(
+        "Pickup Time",
+        formData.pickup_time,
+        margin + halfWidth + 5,
+        halfWidth
+      );
+
+      y += 17;
+
+
+      drawInfoRow(
+        "Vendor",
+        `Vendor ${formData.vendor_id}`,
+        margin,
+        halfWidth
+      );
+
+      drawInfoRow(
+        "Passengers",
+        formData.passenger_count,
+        margin + halfWidth + 5,
+        halfWidth
+      );
+
+      y += 17;
+
+
+      drawInfoRow(
+        "Store & Forward",
+        formData.store_and_fwd_flag === "Y"
+          ? "Yes"
+          : "No",
+        margin,
+        halfWidth
+      );
+
+      drawInfoRow(
+        "Traffic Period",
+        insights.trafficStatus,
+        margin + halfWidth + 5,
+        halfWidth
+      );
+
+      y += 17;
+
+
+      /* ===================================================
+         LOCATIONS
+      =================================================== */
+
+      sectionTitle(
+        "Trip Locations",
+        "Pickup and destination coordinates"
+      );
+
+
+      doc.setFillColor(
+        ...lightBlue
+      );
+
+      doc.roundedRect(
+        margin,
+        y,
+        halfWidth,
+        38,
+        3,
+        3,
+        "F"
+      );
+
+
+      doc.roundedRect(
+        margin + halfWidth + 5,
+        y,
+        halfWidth,
+        38,
+        3,
+        3,
+        "F"
+      );
+
+
+      doc.setFont(
+        "helvetica",
+        "bold"
+      );
+
+      doc.setFontSize(10);
+
+      doc.setTextColor(
+        ...blue
+      );
+
+      doc.text(
+        "PICKUP",
+        margin + 5,
+        y + 8
+      );
+
+
+      doc.text(
+        "DROPOFF",
+        margin + halfWidth + 10,
+        y + 8
+      );
+
+
+      doc.setFont(
+        "helvetica",
+        "normal"
+      );
+
+      doc.setFontSize(8.5);
+
+      doc.setTextColor(
+        ...dark
+      );
+
+
+      const pickupText =
+        pickupQuery ||
+        "Selected pickup location";
+
+
+      const dropoffText =
+        dropoffQuery ||
+        "Selected dropoff location";
+
+
+      const pickupLines =
+        doc.splitTextToSize(
+          pickupText,
+          halfWidth - 10
+        );
+
+
+      const dropoffLines =
+        doc.splitTextToSize(
+          dropoffText,
+          halfWidth - 10
+        );
+
+
+      doc.text(
+        pickupLines.slice(0, 2),
+        margin + 5,
+        y + 15
+      );
+
+
+      doc.text(
+        dropoffLines.slice(0, 2),
+        margin + halfWidth + 10,
+        y + 15
+      );
+
+
+      doc.setFontSize(7.5);
+
+      doc.setTextColor(
+        ...gray
+      );
+
+
+      doc.text(
+        `Lat: ${Number(
+          formData.pickup_latitude
+        ).toFixed(5)}`,
+        margin + 5,
+        y + 29
+      );
+
+
+      doc.text(
+        `Lon: ${Number(
+          formData.pickup_longitude
+        ).toFixed(5)}`,
+        margin + 5,
+        y + 34
+      );
+
+
+      doc.text(
+        `Lat: ${Number(
+          formData.dropoff_latitude
+        ).toFixed(5)}`,
+        margin + halfWidth + 10,
+        y + 29
+      );
+
+
+      doc.text(
+        `Lon: ${Number(
+          formData.dropoff_longitude
+        ).toFixed(5)}`,
+        margin + halfWidth + 10,
+        y + 34
+      );
+
+
+      y += 48;
+
+
+      /* ===================================================
+         TRIP INSIGHTS
+      =================================================== */
+
+      sectionTitle(
+        "Trip Insights",
+        "Derived from trip timing and predicted route characteristics"
+      );
+
+
+      const insightWidth =
+        (
+          pageWidth -
+          margin * 2 -
+          10
+        ) / 3;
+
+
+      drawInfoRow(
+        "Day Type",
+        insights.isWeekend
+          ? "Weekend"
+          : "Weekday",
+        margin,
+        insightWidth
+      );
+
+
+      drawInfoRow(
+        "Trip Time",
+        insights.isNight
+          ? "Night"
+          : "Daytime",
+        margin + insightWidth + 5,
+        insightWidth
+      );
+
+
+      drawInfoRow(
+        "Trip Category",
+        insights.tripType,
+        margin +
+          (insightWidth + 5) * 2,
+        insightWidth
+      );
+
+
+      y += 18;
+
+
+      /* ===================================================
+         AI ANALYSIS BOX
+      =================================================== */
+
+      doc.setFillColor(
+        248,
+        250,
+        252
+      );
+
+      doc.setDrawColor(
+        226,
+        232,
+        240
+      );
+
+      doc.roundedRect(
+        margin,
+        y,
+        pageWidth - margin * 2,
+        31,
+        3,
+        3,
+        "FD"
+      );
+
+
+      doc.setFont(
+        "helvetica",
+        "bold"
+      );
+
+      doc.setFontSize(10);
+
+      doc.setTextColor(
+        ...blue
+      );
+
+      doc.text(
+        "AI Trip Analysis",
+        margin + 6,
+        y + 8
+      );
+
+
+      doc.setFont(
+        "helvetica",
+        "normal"
+      );
+
+      doc.setFontSize(8.5);
+
+      doc.setTextColor(
+        ...dark
+      );
+
+
+      const analysisText =
+        `This trip is classified as a ${insights.tripType.toLowerCase()} ` +
+        `during ${insights.trafficStatus.toLowerCase()}. ` +
+        `The predicted journey duration is ${result.duration_minutes} minutes ` +
+        `over approximately ${result.distance_km} km, with an estimated average ` +
+        `speed of ${result.estimated_speed} km/h.`;
+
+
+      const analysisLines =
+        doc.splitTextToSize(
+          analysisText,
+          pageWidth - margin * 2 - 12
+        );
+
+
+      doc.text(
+        analysisLines,
+        margin + 6,
+        y + 15
+      );
+
+
+      y += 42;
+
+
+      /* ===================================================
+         MODEL INFORMATION
+      =================================================== */
+
+      sectionTitle(
+        "Model Information",
+        "Machine learning system used for prediction"
+      );
+
+
+      doc.setFillColor(
+        ...navy
+      );
+
+      doc.roundedRect(
+        margin,
+        y,
+        pageWidth - margin * 2,
+        34,
+        3,
+        3,
+        "F"
+      );
+
+
+      doc.setFont(
+        "helvetica",
+        "bold"
+      );
+
+      doc.setFontSize(13);
+
+      doc.setTextColor(
+        255,
+        255,
+        255
+      );
+
+      doc.text(
+        "XGBoost Regression",
+        margin + 7,
+        y + 10
+      );
+
+
+      doc.setFont(
+        "helvetica",
+        "normal"
+      );
+
+      doc.setFontSize(8);
+
+      doc.setTextColor(
+        203,
+        213,
+        225
+      );
+
+
+      doc.text(
+        "Tuned machine learning model trained on NYC taxi trip data.",
+        margin + 7,
+        y + 17
+      );
+
+
+      doc.text(
+        "Dataset size: 1.45M+ records",
+        margin + 7,
+        y + 24
+      );
+
+
+      doc.text(
+        "Inference: Real-time API prediction",
+        pageWidth / 2 + 5,
+        y + 24
+      );
+
+
+      y += 45;
+
+
+      /* ===================================================
+         ANALYTICS SNAPSHOT
+      =================================================== */
+
+      if (analyticsData) {
+
+        addPageIfNeeded(65);
+
+        sectionTitle(
+          "Dataset Analytics Snapshot",
+          "Statistics loaded from the NYC taxi analytics API"
+        );
+
+
+        const analyticsValues = [
+
+          [
+            "Total Trips",
+            analyticsData.total_trips
+              ? analyticsData.total_trips.toLocaleString()
+              : "--",
+          ],
+
+          [
+            "Average Duration",
+            analyticsData.avg_duration_minutes != null
+              ? `${analyticsData.avg_duration_minutes} min`
+              : "--",
+          ],
+
+          [
+            "Average Passengers",
+            analyticsData.avg_passengers != null
+              ? analyticsData.avg_passengers
+              : "--",
+          ],
+
+          [
+            "Rush Hour Trips",
+            analyticsData.rush_hour?.rush_trips
+              ? analyticsData.rush_hour.rush_trips.toLocaleString()
+              : "--",
+          ],
+
+        ];
+
+
+        analyticsValues.forEach(
+          ([label, value], index) => {
+
+            const row =
+              Math.floor(index / 2);
+
+            const col =
+              index % 2;
+
+            const x =
+              margin +
+              col *
+                (halfWidth + 5);
+
+            if (col === 0) {
+              y += row === 0 ? 0 : 17;
+            }
+
+            drawInfoRow(
+              label,
+              value,
+              x,
+              halfWidth
+            );
+
+            if (col === 1) {
+              y += 17;
+            }
+
+          }
+        );
+
+      }
+
+
+      /* ===================================================
+         DISCLAIMER
+      =================================================== */
+
+      addPageIfNeeded(35);
+
+      doc.setFillColor(
+        255,
+        251,
+        235
+      );
+
+      doc.roundedRect(
+        margin,
+        y,
+        pageWidth - margin * 2,
+        25,
+        3,
+        3,
+        "F"
+      );
+
+
+      doc.setFont(
+        "helvetica",
+        "bold"
+      );
+
+      doc.setFontSize(8.5);
+
+      doc.setTextColor(
+        146,
+        64,
+        14
+      );
+
+      doc.text(
+        "Important Note",
+        margin + 6,
+        y + 8
+      );
+
+
+      doc.setFont(
+        "helvetica",
+        "normal"
+      );
+
+      doc.setFontSize(7.5);
+
+
+      const note =
+        "Predictions are machine learning estimates and may differ from actual " +
+        "trip duration, route conditions and final taxi fare.";
+
+
+      doc.text(
+        note,
+        margin + 6,
+        y + 15
+      );
+
+
+      y += 35;
+
+
+      /* ===================================================
+         FINAL FOOTER
+      =================================================== */
+
+      addFooter();
+
+
+      /* ===================================================
+         SAVE PDF
+      =================================================== */
+
+      const safeDate =
+        formData.pickup_date
+          .replaceAll("-", "");
+
+      const safeTime =
+        formData.pickup_time
+          .replaceAll(":", "");
+
+
+      doc.save(
+        `NYC_Ride_Trip_Report_${safeDate}_${safeTime}.pdf`
       );
 
     };
@@ -1311,11 +2273,8 @@ Machine Learning Prediction System
 
       e.preventDefault();
 
-
       setLoading(true);
-
       setError("");
-
       setResult(null);
 
 
@@ -1367,12 +2326,8 @@ Machine Learning Prediction System
 
 
         if (
-          Number.isNaN(
-            pickupLat
-          ) ||
-          Number.isNaN(
-            pickupLon
-          )
+          Number.isNaN(pickupLat) ||
+          Number.isNaN(pickupLon)
         ) {
 
           throw new Error(
@@ -1383,12 +2338,8 @@ Machine Learning Prediction System
 
 
         if (
-          Number.isNaN(
-            dropoffLat
-          ) ||
-          Number.isNaN(
-            dropoffLon
-          )
+          Number.isNaN(dropoffLat) ||
+          Number.isNaN(dropoffLon)
         ) {
 
           throw new Error(
@@ -1519,24 +2470,17 @@ Machine Learning Prediction System
         }
 
 
-        setResult(
-          data
-        );
+        setResult(data);
 
 
         setTimeout(
           () => {
 
             document
-              .getElementById(
-                "results"
-              )
+              .getElementById("results")
               ?.scrollIntoView({
-                behavior:
-                  "smooth",
-
-                block:
-                  "start",
+                behavior: "smooth",
+                block: "start",
               });
 
           },
@@ -1551,12 +2495,10 @@ Machine Learning Prediction System
           err
         );
 
-
         setError(
           err.message ||
           "Unable to connect to prediction server."
         );
-
 
       } finally {
 
@@ -1756,9 +2698,7 @@ Machine Learning Prediction System
 
 
           <form
-            onSubmit={
-              handleSubmit
-            }
+            onSubmit={handleSubmit}
           >
 
 
@@ -2119,15 +3059,10 @@ Machine Learning Prediction System
             >
 
               {loading ? (
-
                 <Spinner />
-
               ) : (
-
                 <Icon name="compass" />
-
               )}
-
 
               {loading
                 ? "Predicting"
@@ -2292,14 +3227,12 @@ Machine Learning Prediction System
               <button
                 type="button"
                 className="report-btn"
-                onClick={
-                  downloadReport
-                }
+                onClick={downloadReport}
               >
 
                 <Icon name="download" />
 
-                Download trip report
+                Download PDF report
 
               </button>
 
@@ -2314,9 +3247,7 @@ Machine Learning Prediction System
             TRIP INSIGHTS
         ================================================= */}
 
-        <section
-          className="analytics-section"
-        >
+        <section className="analytics-section">
 
           <div className="section-title">
 
@@ -2528,8 +3459,6 @@ Machine Learning Prediction System
           </div>
 
 
-          {/* LOAD BUTTON */}
-
           {!analyticsData &&
             !analyticsLoading && (
 
@@ -2538,9 +3467,7 @@ Machine Learning Prediction System
                 <button
                   type="button"
                   className="predict-btn"
-                  onClick={
-                    fetchAnalytics
-                  }
+                  onClick={fetchAnalytics}
                 >
 
                   <Icon name="pulse" />
@@ -2553,8 +3480,6 @@ Machine Learning Prediction System
 
             )}
 
-
-          {/* LOADING */}
 
           {analyticsLoading && (
 
@@ -2577,8 +3502,6 @@ Machine Learning Prediction System
           )}
 
 
-          {/* ERROR */}
-
           {analyticsError && (
 
             <div className="error-message">
@@ -2594,8 +3517,6 @@ Machine Learning Prediction System
 
           )}
 
-
-          {/* ANALYTICS DASHBOARD */}
 
           {analyticsData && (
 
@@ -2685,9 +3606,6 @@ Machine Learning Prediction System
 
               <div className="analytics-chart-grid">
 
-
-                {/* TRIPS BY HOUR */}
-
                 <div className="analytics-chart-card">
 
                   <div className="chart-header">
@@ -2714,9 +3632,7 @@ Machine Learning Prediction System
                   >
 
                     <BarChart
-                      data={
-                        tripsByHour
-                      }
+                      data={tripsByHour}
                     >
 
                       <CartesianGrid
@@ -2726,12 +3642,10 @@ Machine Learning Prediction System
                       <XAxis
                         dataKey="hour"
                         label={{
-                          value:
-                            "Hour",
+                          value: "Hour",
                           position:
                             "insideBottom",
-                          offset:
-                            -5,
+                          offset: -5,
                         }}
                       />
 
@@ -2755,8 +3669,6 @@ Machine Learning Prediction System
 
                 </div>
 
-
-                {/* DURATION BY HOUR */}
 
                 <div className="analytics-chart-card">
 
@@ -2784,9 +3696,7 @@ Machine Learning Prediction System
                   >
 
                     <LineChart
-                      data={
-                        durationByHour
-                      }
+                      data={durationByHour}
                     >
 
                       <CartesianGrid
@@ -2821,9 +3731,6 @@ Machine Learning Prediction System
 
               <div className="analytics-chart-grid">
 
-
-                {/* RUSH HOURS */}
-
                 <div className="analytics-chart-card">
 
                   <div className="chart-header">
@@ -2850,9 +3757,7 @@ Machine Learning Prediction System
                   >
 
                     <BarChart
-                      data={
-                        rushHourChartData
-                      }
+                      data={rushHourChartData}
                     >
 
                       <CartesianGrid
@@ -2884,8 +3789,6 @@ Machine Learning Prediction System
                 </div>
 
 
-                {/* WEEKDAY VS WEEKEND */}
-
                 <div className="analytics-chart-card">
 
                   <div className="chart-header">
@@ -2914,9 +3817,7 @@ Machine Learning Prediction System
                     <PieChart>
 
                       <Pie
-                        data={
-                          dayTypeChartData
-                        }
+                        data={dayTypeChartData}
                         cx="50%"
                         cy="50%"
                         outerRadius={100}
@@ -2925,11 +3826,9 @@ Machine Learning Prediction System
                       >
 
                         <Cell />
-
                         <Cell />
 
                       </Pie>
-
 
                       <Tooltip />
 
@@ -2972,9 +3871,7 @@ Machine Learning Prediction System
                 >
 
                   <BarChart
-                    data={
-                      vendorDistribution
-                    }
+                    data={vendorDistribution}
                   >
 
                     <CartesianGrid
@@ -3010,19 +3907,13 @@ Machine Learning Prediction System
               </div>
 
 
-              {/* REFRESH */}
-
               <div className="analytics-refresh">
 
                 <button
                   type="button"
                   className="route-btn"
-                  onClick={
-                    fetchAnalytics
-                  }
-                  disabled={
-                    analyticsLoading
-                  }
+                  onClick={fetchAnalytics}
+                  disabled={analyticsLoading}
                 >
 
                   {analyticsLoading
