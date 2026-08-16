@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./App.css";
+
 import {
   MapContainer,
   TileLayer,
@@ -9,75 +10,42 @@ import {
   useMap,
 } from "react-leaflet";
 
-// Leaflet marker icon fix
 import "leaflet/dist/leaflet.css";
-
 import L from "leaflet";
+
+/* =========================================================
+   LEAFLET MARKER FIX
+========================================================= */
 
 delete L.Icon.Default.prototype._getIconUrl;
 
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl:
-    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-
-  iconUrl:
-    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-
-  shadowUrl:
-    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
-// Map Component
 
-// function TaxiMap({ formData }) {
-//   const pickup = [
-//     Number(formData.pickup_latitude),
-//     Number(formData.pickup_longitude),
-//   ];
+/* =========================================================
+   MAP AUTO FIT COMPONENT
+========================================================= */
 
-//   const dropoff = [
-//     Number(formData.dropoff_latitude),
-//     Number(formData.dropoff_longitude),
-//   ];
+function FitRoute({ route, pickup, dropoff }) {
+  const map = useMap();
 
-//   const center = [
-//     (pickup[0] + dropoff[0]) / 2,
-//     (pickup[1] + dropoff[1]) / 2,
-//   ];
+  useEffect(() => {
+    const bounds =
+      route.length > 0 ? L.latLngBounds(route) : L.latLngBounds([pickup, dropoff]);
 
-//   return (
-//     <MapContainer
-//       center={center}
-//       zoom={13}
-//       scrollWheelZoom={true}
-//       className="taxi-map"
-//     >
-//       <TileLayer
-//         attribution='&copy; OpenStreetMap contributors'
-//         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-//       />
+    map.fitBounds(bounds, { padding: [40, 40] });
+  }, [map, route, pickup, dropoff]);
 
-//       <Marker position={pickup}>
-//         <Popup>
-//           🟢 <strong>Pickup</strong>
-//           <br />
-//           {pickup[0].toFixed(4)}, {pickup[1].toFixed(4)}
-//         </Popup>
-//       </Marker>
+  return null;
+}
 
-//       <Marker position={dropoff}>
-//         <Popup>
-//           🔴 <strong>Dropoff</strong>
-//           <br />
-//           {dropoff[0].toFixed(4)}, {dropoff[1].toFixed(4)}
-//         </Popup>
-//       </Marker>
+/* =========================================================
+   TAXI MAP
+========================================================= */
 
-//       <Polyline
-//         positions={[pickup, dropoff]}
-//       />
-//     </MapContainer>
-//   );
-// }
 function TaxiMap({ formData }) {
   const [route, setRoute] = useState([]);
   const [routeDistance, setRouteDistance] = useState(null);
@@ -85,20 +53,9 @@ function TaxiMap({ formData }) {
   const [routeLoading, setRouteLoading] = useState(false);
   const [routeError, setRouteError] = useState("");
 
-  const pickup = [
-    Number(formData.pickup_latitude),
-    Number(formData.pickup_longitude),
-  ];
-
-  const dropoff = [
-    Number(formData.dropoff_latitude),
-    Number(formData.dropoff_longitude),
-  ];
-
-  const center = [
-    (pickup[0] + dropoff[0]) / 2,
-    (pickup[1] + dropoff[1]) / 2,
-  ];
+  const pickup = [Number(formData.pickup_latitude), Number(formData.pickup_longitude)];
+  const dropoff = [Number(formData.dropoff_latitude), Number(formData.dropoff_longitude)];
+  const center = [(pickup[0] + dropoff[0]) / 2, (pickup[1] + dropoff[1]) / 2];
 
   const getRoute = async () => {
     setRouteLoading(true);
@@ -107,48 +64,28 @@ function TaxiMap({ formData }) {
     try {
       const url =
         `https://router.project-osrm.org/route/v1/driving/` +
-        `${pickup[1]},${pickup[0]};` +
-        `${dropoff[1]},${dropoff[0]}` +
+        `${pickup[1]},${pickup[0]};${dropoff[1]},${dropoff[0]}` +
         `?overview=full&geometries=geojson`;
 
       const response = await fetch(url);
-
-      if (!response.ok) {
-        throw new Error("Unable to fetch road route.");
-      }
+      if (!response.ok) throw new Error("Unable to fetch road route.");
 
       const data = await response.json();
-
-      if (
-        !data.routes ||
-        data.routes.length === 0
-      ) {
-        throw new Error("No route found.");
+      if (!data.routes || data.routes.length === 0) {
+        throw new Error("No route found between these locations.");
       }
 
       const selectedRoute = data.routes[0];
-
-      const coordinates =
-        selectedRoute.geometry.coordinates.map(
-          ([longitude, latitude]) => [
-            latitude,
-            longitude,
-          ]
-        );
+      const coordinates = selectedRoute.geometry.coordinates.map(
+        ([longitude, latitude]) => [latitude, longitude]
+      );
 
       setRoute(coordinates);
-
-      setRouteDistance(
-        (selectedRoute.distance / 1000).toFixed(2)
-      );
-
-      setRouteDuration(
-        (selectedRoute.duration / 60).toFixed(1)
-      );
-
+      setRouteDistance((selectedRoute.distance / 1000).toFixed(2));
+      setRouteDuration((selectedRoute.duration / 60).toFixed(1));
     } catch (error) {
       console.error("Route error:", error);
-      setRouteError(error.message);
+      setRouteError(error.message || "Unable to find route.");
     } finally {
       setRouteLoading(false);
     }
@@ -156,1605 +93,558 @@ function TaxiMap({ formData }) {
 
   return (
     <div>
-
+      {/* ROUTE CONTROLS */}
       <div className="route-controls">
-
-        <button
-          type="button"
-          className="route-btn"
-          onClick={getRoute}
-          disabled={routeLoading}
-        >
-          {routeLoading
-            ? "⏳ Finding Route..."
-            : "🛣️ Show Road Route"}
+        <button type="button" className="route-btn" onClick={getRoute} disabled={routeLoading}>
+          {routeLoading ? "⏳ Finding Route..." : "🛣️ Show Road Route"}
         </button>
 
         {routeDistance && (
           <div className="route-info">
-
             <div>
-              <strong>
-                {routeDistance} km
-              </strong>
-
-              <span>
-                Road Distance
-              </span>
+              <strong>{routeDistance} km</strong>
+              <span>Road Distance</span>
             </div>
-
             <div>
-              <strong>
-                {routeDuration} min
-              </strong>
-
-              <span>
-                Route Time
-              </span>
+              <strong>{routeDuration} min</strong>
+              <span>Route Time</span>
             </div>
-
           </div>
         )}
-
       </div>
 
-      {routeError && (
-        <div className="route-error">
-          ❌ {routeError}
-        </div>
-      )}
+      {routeError && <div className="route-error">❌ {routeError}</div>}
 
+      {/* MAP */}
       <MapContainer
         center={center}
         zoom={13}
         scrollWheelZoom={true}
         className="taxi-map"
+        style={{ height: "450px", width: "100%", minHeight: "450px" }}
       >
-
         <TileLayer
           attribution="&copy; OpenStreetMap contributors"
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        {/* PICKUP */}
+        <FitRoute route={route} pickup={pickup} dropoff={dropoff} />
 
         <Marker position={pickup}>
-
           <Popup>
-
-            <strong>
-              🟢 Pickup Location
-            </strong>
-
+            <strong>🟢 Pickup Location</strong>
             <br />
-
-            Latitude:
-            {pickup[0].toFixed(4)}
-
+            Latitude: {pickup[0].toFixed(4)}
             <br />
-
-            Longitude:
-            {pickup[1].toFixed(4)}
-
+            Longitude: {pickup[1].toFixed(4)}
           </Popup>
-
         </Marker>
-
-
-        {/* DROPOFF */}
 
         <Marker position={dropoff}>
-
           <Popup>
-
-            <strong>
-              🔴 Dropoff Location
-            </strong>
-
+            <strong>🔴 Dropoff Location</strong>
             <br />
-
-            Latitude:
-            {dropoff[0].toFixed(4)}
-
+            Latitude: {dropoff[0].toFixed(4)}
             <br />
-
-            Longitude:
-            {dropoff[1].toFixed(4)}
-
+            Longitude: {dropoff[1].toFixed(4)}
           </Popup>
-
         </Marker>
 
-
-        {/* ACTUAL ROAD ROUTE */}
-
-        {route.length > 0 && (
-          <Polyline
-            positions={route}
-            pathOptions={{
-              weight: 6,
-            }}
-          />
-        )}
-
+        {route.length > 0 && <Polyline positions={route} pathOptions={{ weight: 6 }} />}
       </MapContainer>
-
     </div>
   );
 }
 
-// taxi trip Insights
+/* =========================================================
+   TRIP INSIGHTS
+========================================================= */
+
 function getTripInsights(formData, result) {
   const date = new Date(formData.pickup_datetime);
-
   const hour = date.getHours();
   const day = date.getDay();
 
   const isWeekend = day === 0 || day === 6;
-
-  const isRushHour = [
-    7,
-    8,
-    9,
-    10,
-    16,
-    17,
-    18,
-    19,
-    20,
-  ].includes(hour);
-
-  const isNight =
-    hour >= 22 || hour <= 4;
+  const isRushHour = [7, 8, 9, 10, 16, 17, 18, 19, 20].includes(hour);
+  const isNight = hour >= 22 || hour <= 4;
 
   let tripType = "Short Trip";
-
   if (result?.distance_km) {
     const distance = Number(result.distance_km);
-
-    if (distance >= 10) {
-      tripType = "Long Trip";
-    } else if (distance >= 5) {
-      tripType = "Medium Trip";
-    }
+    if (distance >= 10) tripType = "Long Trip";
+    else if (distance >= 5) tripType = "Medium Trip";
   }
 
   let trafficStatus = "Normal Traffic";
+  if (isRushHour) trafficStatus = "Peak Hours";
+  else if (isNight) trafficStatus = "Night Hours";
 
-  if (isRushHour) {
-    trafficStatus = "Peak Hours";
-  } else if (isNight) {
-    trafficStatus = "Night Hours";
-  }
-
-  return {
-    hour,
-    isWeekend,
-    isRushHour,
-    isNight,
-    tripType,
-    trafficStatus,
-  };
+  return { hour, isWeekend, isRushHour, isNight, tripType, trafficStatus };
 }
+
+/* =========================================================
+   MAIN APP
+========================================================= */
+
 function App() {
-  // =====================================================
-  // DEFAULT FORM VALUES
-  // =====================================================
-
-  const initialFormData = {
-    vendor_id: "1",
-
-    pickup_date: "2016-06-12",
-    pickup_time: "08:30",
-
-    passenger_count: "1",
-
-    pickup_latitude: "40.7489",
-    pickup_longitude: "-73.9680",
-
-    dropoff_latitude: "40.7614",
-    dropoff_longitude: "-73.9776",
-
+  const [formData, setFormData] = useState({
+    vendor_id: 1,
+    pickup_datetime: "2016-06-12T08:30",
+    passenger_count: 1,
+    pickup_latitude: 40.7489,
+    pickup_longitude: -73.968,
+    dropoff_latitude: 40.7614,
+    dropoff_longitude: -73.9776,
     store_and_fwd_flag: "N",
-  };
-
-  // =====================================================
-  // STATES
-  // =====================================================
-
-  const [formData, setFormData] = useState(initialFormData);
+  });
 
   const [result, setResult] = useState(null);
-
   const [loading, setLoading] = useState(false);
-
   const [error, setError] = useState("");
 
-  // Insights
-  const insights = getTripInsights(
-      formData,
-      result
-    );
-
-  // =====================================================
-  // HANDLE INPUT CHANGE
-  // =====================================================
+  const insights = getTripInsights(formData, result);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-
-    // Remove previous error when user changes input
-    if (error) {
-      setError("");
-    }
+    setFormData({ ...formData, [name]: value });
   };
 
-  // =====================================================
-  // RESET
-  // =====================================================
+  /* =====================================================
+     DOWNLOAD REPORT (moved to component scope — this was
+     the bug causing the white screen: it was previously
+     declared inside handleSubmit, so the button's
+     onClick={downloadReport} couldn't find it.)
+  ===================================================== */
 
-  const handleReset = () => {
-    setFormData(initialFormData);
-    setResult(null);
-    setError("");
+  const downloadReport = () => {
+    if (!result) return;
+
+    const report = `
+========================================
+        NYC RIDE - TRIP REPORT
+========================================
+
+TRIP DETAILS
+----------------------------------------
+Pickup Date & Time : ${formData.pickup_datetime}
+
+Pickup Location
+Latitude          : ${formData.pickup_latitude}
+Longitude         : ${formData.pickup_longitude}
+
+Dropoff Location
+Latitude          : ${formData.dropoff_latitude}
+Longitude         : ${formData.dropoff_longitude}
+
+Vendor ID         : ${formData.vendor_id}
+Passengers        : ${formData.passenger_count}
+Store & Forward   : ${formData.store_and_fwd_flag}
+
+PREDICTION RESULTS
+----------------------------------------
+Predicted Duration : ${result.duration_minutes} minutes
+Estimated Fare     : $${result.estimated_fare}
+Distance           : ${result.distance_km} km
+Average Speed      : ${result.estimated_speed} km/h
+
+TRIP INSIGHTS
+----------------------------------------
+Traffic Period     : ${insights.trafficStatus}
+Day Type           : ${insights.isWeekend ? "Weekend" : "Weekday"}
+Trip Time          : ${insights.isNight ? "Night" : "Daytime"}
+Trip Category      : ${insights.tripType}
+
+========================================
+Generated by NYC Ride
+Machine Learning Prediction System
+========================================
+`;
+
+    const blob = new Blob([report], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = "NYC_Ride_Trip_Report.txt";
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    URL.revokeObjectURL(url);
   };
-
-  // =====================================================
-  // PREDICT
-  // =====================================================
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     setLoading(true);
     setError("");
     setResult(null);
 
     try {
-      // -------------------------------------------------
-      // CREATE DATETIME
-      // -------------------------------------------------
+      const pickupLat = Number(formData.pickup_latitude);
+      const pickupLon = Number(formData.pickup_longitude);
+      const dropoffLat = Number(formData.dropoff_latitude);
+      const dropoffLon = Number(formData.dropoff_longitude);
 
-      const pickupDatetime =
-        `${formData.pickup_date}T${formData.pickup_time}`;
-
-      // -------------------------------------------------
-      // CONVERT NUMBERS
-      // -------------------------------------------------
-
-      const vendorId = Number(formData.vendor_id);
-
-      const passengerCount =
-        Number(formData.passenger_count);
-
-      const pickupLatitude =
-        Number(formData.pickup_latitude);
-
-      const pickupLongitude =
-        Number(formData.pickup_longitude);
-
-      const dropoffLatitude =
-        Number(formData.dropoff_latitude);
-
-      const dropoffLongitude =
-        Number(formData.dropoff_longitude);
-
-      // -------------------------------------------------
-      // VALIDATE NUMBERS
-      // -------------------------------------------------
-
-      if (!Number.isFinite(vendorId)) {
-        throw new Error(
-          "Vendor ID is invalid."
-        );
+      if (pickupLat < -90 || pickupLat > 90) {
+        throw new Error("Pickup latitude must be between -90 and 90.");
+      }
+      if (dropoffLat < -90 || dropoffLat > 90) {
+        throw new Error("Dropoff latitude must be between -90 and 90.");
+      }
+      if (pickupLon < -180 || pickupLon > 180) {
+        throw new Error("Pickup longitude must be between -180 and 180.");
+      }
+      if (dropoffLon < -180 || dropoffLon > 180) {
+        throw new Error("Dropoff longitude must be between -180 and 180.");
       }
 
-      if (
-        !Number.isFinite(passengerCount) ||
-        passengerCount < 1
-      ) {
-        throw new Error(
-          "Passenger count must be at least 1."
-        );
-      }
+      const response = await fetch("http://127.0.0.1:8000/predict", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          vendor_id: Number(formData.vendor_id),
+          pickup_datetime: formData.pickup_datetime,
+          passenger_count: Number(formData.passenger_count),
+          pickup_longitude: pickupLon,
+          pickup_latitude: pickupLat,
+          dropoff_longitude: dropoffLon,
+          dropoff_latitude: dropoffLat,
+          store_and_fwd_flag: formData.store_and_fwd_flag,
+        }),
+      });
 
-      if (
-        !Number.isFinite(pickupLatitude) ||
-        pickupLatitude < -90 ||
-        pickupLatitude > 90
-      ) {
-        throw new Error(
-          "Pickup latitude must be between -90 and 90."
-        );
-      }
-
-      if (
-        !Number.isFinite(pickupLongitude) ||
-        pickupLongitude < -180 ||
-        pickupLongitude > 180
-      ) {
-        throw new Error(
-          "Pickup longitude must be between -180 and 180."
-        );
-      }
-
-      if (
-        !Number.isFinite(dropoffLatitude) ||
-        dropoffLatitude < -90 ||
-        dropoffLatitude > 90
-      ) {
-        throw new Error(
-          "Dropoff latitude must be between -90 and 90."
-        );
-      }
-
-      if (
-        !Number.isFinite(dropoffLongitude) ||
-        dropoffLongitude < -180 ||
-        dropoffLongitude > 180
-      ) {
-        throw new Error(
-          "Dropoff longitude must be between -180 and 180."
-        );
-      }
-
-      // -------------------------------------------------
-      // CREATE PAYLOAD
-      // -------------------------------------------------
-
-      const payload = {
-        vendor_id: vendorId,
-
-        pickup_datetime: pickupDatetime,
-
-        passenger_count: passengerCount,
-
-        pickup_longitude: pickupLongitude,
-        pickup_latitude: pickupLatitude,
-
-        dropoff_longitude: dropoffLongitude,
-        dropoff_latitude: dropoffLatitude,
-
-        store_and_fwd_flag:
-          formData.store_and_fwd_flag,
-      };
-
-      // -------------------------------------------------
-      // DEBUG LOG
-      // -------------------------------------------------
-
-      console.log(
-        "===================================="
-      );
-
-      console.log(
-        "🚕 NYC TAXI PREDICTION REQUEST"
-      );
-
-      console.log(
-        "API URL:",
-        "http://127.0.0.1:8000/predict"
-      );
-
-      console.log(
-        "Payload:",
-        payload
-      );
-
-      console.log(
-        "JSON Payload:",
-        JSON.stringify(
-          payload,
-          null,
-          2
-        )
-      );
-
-      console.log(
-        "===================================="
-      );
-
-      // -------------------------------------------------
-      // SEND REQUEST
-      // -------------------------------------------------
-
-      let response;
-
-      try {
-        response = await fetch(
-          "http://127.0.0.1:8000/predict",
-          {
-            method: "POST",
-
-            headers: {
-              "Content-Type":
-                "application/json",
-
-              Accept:
-                "application/json",
-            },
-
-            body: JSON.stringify(
-              payload
-            ),
-          }
-        );
-      } catch (networkError) {
-        // ---------------------------------------------
-        // NETWORK / CORS ERROR
-        // ---------------------------------------------
-
-        console.error(
-          "===================================="
-        );
-
-        console.error(
-          "❌ NETWORK / CORS ERROR"
-        );
-
-        console.error(
-          "Error:",
-          networkError
-        );
-
-        console.error(
-          "Message:",
-          networkError?.message
-        );
-
-        console.error(
-          "===================================="
-        );
-
-        throw new Error(
-          `Unable to connect to FastAPI.
-
-API:
-http://127.0.0.1:8000/predict
-
-Browser error:
-${networkError?.message || "Failed to fetch"}
-
-Possible causes:
-• FastAPI is not running
-• CORS problem
-• Wrong port
-• Backend is unreachable
-
-Open browser Console for the complete error.`
-        );
-      }
-
-      // -------------------------------------------------
-      // RESPONSE STATUS
-      // -------------------------------------------------
-
-      console.log(
-        "📡 HTTP STATUS:",
-        response.status
-      );
-
-      console.log(
-        "📡 STATUS TEXT:",
-        response.statusText
-      );
-
-      console.log(
-        "📡 RESPONSE URL:",
-        response.url
-      );
-
-      console.log(
-        "📡 RESPONSE HEADERS:",
-        [...response.headers.entries()]
-      );
-
-      // -------------------------------------------------
-      // READ RAW RESPONSE
-      // -------------------------------------------------
-
-      const responseText =
-        await response.text();
-
-      console.log(
-        "📦 RAW BACKEND RESPONSE:"
-      );
-
-      console.log(
-        responseText
-      );
-
-      // -------------------------------------------------
-      // PARSE RESPONSE
-      // -------------------------------------------------
-
-      let data;
-
-      try {
-        data =
-          JSON.parse(responseText);
-      } catch (jsonError) {
-        console.error(
-          "❌ JSON PARSE ERROR:",
-          jsonError
-        );
-
-        throw new Error(
-          `Backend returned invalid JSON.
-
-HTTP Status:
-${response.status}
-
-Raw Response:
-${responseText}`
-        );
-      }
-
-      console.log(
-        "📦 PARSED BACKEND RESPONSE:",
-        data
-      );
-
-      // -------------------------------------------------
-      // HTTP ERROR
-      // -------------------------------------------------
+      const data = await response.json();
 
       if (!response.ok) {
-        console.error(
-          "===================================="
-        );
-
-        console.error(
-          "❌ BACKEND HTTP ERROR"
-        );
-
-        console.error(
-          "Status:",
-          response.status
-        );
-
-        console.error(
-          "Response:",
-          data
-        );
-
-        console.error(
-          "===================================="
-        );
-
-        let backendError =
-          data?.detail ||
-          data?.error ||
-          data?.message ||
-          "Unknown backend error.";
-
-        // FastAPI validation error
-        if (
-          Array.isArray(
-            data?.detail
-          )
-        ) {
-          backendError =
-            data.detail
-              .map((item) => {
-                return (
-                  item?.msg ||
-                  JSON.stringify(item)
-                );
-              })
-              .join("\n");
-        }
-
-        throw new Error(
-          `FastAPI returned HTTP ${response.status}.
-
-${backendError}`
-        );
+        throw new Error(data.detail || data.error || "Server error occurred.");
       }
-
-      // -------------------------------------------------
-      // SUCCESS FALSE
-      // -------------------------------------------------
-
-      if (
-        data.success === false
-      ) {
-        console.error(
-          "❌ PREDICTION FAILED:"
-        );
-
-        console.error(
-          data
-        );
-
-        throw new Error(
-          data.error ||
-          "Backend returned success=false."
-        );
+      if (!data.success) {
+        throw new Error(data.error || "Prediction failed.");
       }
-
-      // -------------------------------------------------
-      // CHECK RESPONSE
-      // -------------------------------------------------
-
-      if (
-        data.duration_minutes ===
-        undefined
-      ) {
-        console.error(
-          "❌ UNEXPECTED BACKEND RESPONSE:"
-        );
-
-        console.error(
-          data
-        );
-
-        throw new Error(
-          `Backend response does not contain duration_minutes.
-
-Received:
-${JSON.stringify(
-  data,
-  null,
-  2
-)}`
-        );
-      }
-
-      // -------------------------------------------------
-      // SUCCESS
-      // -------------------------------------------------
-
-      console.log(
-        "===================================="
-      );
-
-      console.log(
-        "🎉 PREDICTION SUCCESS"
-      );
-
-      console.log(
-        "Duration:",
-        data.duration_minutes
-      );
-
-      console.log(
-        "Fare:",
-        data.estimated_fare
-      );
-
-      console.log(
-        "Distance:",
-        data.distance_km
-      );
-
-      console.log(
-        "Speed:",
-        data.estimated_speed
-      );
-
-      console.log(
-        "Complete result:",
-        data
-      );
-
-      console.log(
-        "===================================="
-      );
 
       setResult(data);
 
+      setTimeout(() => {
+        document.getElementById("results")?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }, 100);
     } catch (err) {
-      // -------------------------------------------------
-      // FINAL ERROR
-      // -------------------------------------------------
-
-      console.error(
-        "===================================="
-      );
-
-      console.error(
-        "❌ FINAL PREDICTION ERROR"
-      );
-
-      console.error(
-        "Error message:",
-        err?.message
-      );
-
-      console.error(
-        "Full error:",
-        err
-      );
-
-      console.error(
-        "===================================="
-      );
-
-      setError(
-        err?.message ||
-        "Something went wrong."
-      );
-
+      console.error("Prediction error:", err);
+      setError(err.message || "Unable to connect to prediction server.");
     } finally {
       setLoading(false);
     }
   };
 
-  // =====================================================
-  // JSX
-  // =====================================================
-
   return (
     <div className="app">
-
-      {/* ==========================================
-          NAVBAR
-      ========================================== */}
-
+      {/* NAVBAR */}
       <nav className="navbar">
-
         <div className="logo">
           🚕 NYC<span>Ride</span>
         </div>
-
         <div className="nav-links">
-
-          <a href="#predict">
-            Predict
-          </a>
-
-          <a href="#results">
-            Results
-          </a>
-
-          <a href="#model">
-            Model
-          </a>
-          <a href="#analytics">
-              Analytics
-          </a>
-
+          <a href="#predict">Predict</a>
+          <a href="#analytics">Analytics</a>
+          <a href="#model">Model</a>
         </div>
-
       </nav>
 
-
-      {/* ==========================================
-          HERO
-      ========================================== */}
-
+      {/* HERO */}
       <section className="hero">
-
         <div className="hero-content">
-
-          <div className="badge">
-            ⚡ AI-Powered Taxi Prediction
-          </div>
-
+          <div className="badge">⚡ AI-Powered Taxi Prediction</div>
           <h1>
-            Predict Your
-            <span> NYC Taxi Trip</span>
+            Predict Your <span>NYC Taxi Trip</span>
           </h1>
-
           <p>
-            Estimate trip duration, fare,
-            distance and average speed using
-            a machine learning model trained
-            on NYC taxi trip data.
+            Estimate trip duration, fare, distance and average speed using a
+            machine learning model trained on NYC taxi data.
           </p>
-
         </div>
-
       </section>
 
-
-      {/* ==========================================
-          MAIN
-      ========================================== */}
-
-      <main className="container">
-
-
-        {/* ==========================================
-            FORM
-        ========================================== */}
-
-        <section
-          className="card"
-          id="predict"
-        >
-
+      <main className="container" id="predict">
+        {/* FORM CARD */}
+        <section className="card">
           <div className="card-header">
-
             <div>
-
-              <h2>
-                Trip Details
-              </h2>
-
-              <p>
-                Enter your pickup and
-                dropoff information
-              </p>
-
+              <h2>Trip Details</h2>
+              <p>Enter your pickup and dropoff information</p>
             </div>
-
-            <span className="icon">
-              📍
-            </span>
-
+            <span className="icon">📍</span>
           </div>
 
-
-          <form
-            onSubmit={handleSubmit}
-          >
-
-            {/* ======================================
-                PICKUP DATE + TIME
-            ====================================== */}
-
-            <div className="grid">
-
-              <div className="form-group">
-
-                <label>
-                  Pickup Date
-                </label>
-
-                <input
-                  type="date"
-                  name="pickup_date"
-                  value={
-                    formData.pickup_date
-                  }
-                  onChange={
-                    handleChange
-                  }
-                  required
-                />
-
-              </div>
-
-
-              <div className="form-group">
-
-                <label>
-                  Pickup Time
-                </label>
-
-                <input
-                  type="time"
-                  name="pickup_time"
-                  value={
-                    formData.pickup_time
-                  }
-                  onChange={
-                    handleChange
-                  }
-                  required
-                />
-
-              </div>
-
+          <form onSubmit={handleSubmit}>
+            <div className="form-group full">
+              <label>Pickup Date & Time</label>
+              <input
+                type="datetime-local"
+                name="pickup_datetime"
+                value={formData.pickup_datetime}
+                onChange={handleChange}
+                required
+              />
             </div>
 
-
-            {/* ======================================
-                PICKUP LOCATION
-            ====================================== */}
-
             <div className="location-section">
-
-              <h3>
-                🟢 Pickup Location
-              </h3>
-
+              <h3>🟢 Pickup Location</h3>
               <div className="grid">
-
                 <div className="form-group">
-
-                  <label>
-                    Latitude
-                  </label>
-
+                  <label>Latitude</label>
                   <input
                     type="number"
                     step="0.0001"
-                    min="-90"
-                    max="90"
                     name="pickup_latitude"
-                    value={
-                      formData.pickup_latitude
-                    }
-                    onChange={
-                      handleChange
-                    }
+                    value={formData.pickup_latitude}
+                    onChange={handleChange}
                     required
                   />
-
                 </div>
-
-
                 <div className="form-group">
-
-                  <label>
-                    Longitude
-                  </label>
-
+                  <label>Longitude</label>
                   <input
                     type="number"
                     step="0.0001"
-                    min="-180"
-                    max="180"
                     name="pickup_longitude"
-                    value={
-                      formData.pickup_longitude
-                    }
-                    onChange={
-                      handleChange
-                    }
+                    value={formData.pickup_longitude}
+                    onChange={handleChange}
                     required
                   />
-
                 </div>
-
               </div>
-
             </div>
-
-
-            {/* ======================================
-                DROPOFF LOCATION
-            ====================================== */}
 
             <div className="location-section">
-
-              <h3>
-                🔴 Dropoff Location
-              </h3>
-
+              <h3>🔴 Dropoff Location</h3>
               <div className="grid">
-
                 <div className="form-group">
-
-                  <label>
-                    Latitude
-                  </label>
-
+                  <label>Latitude</label>
                   <input
                     type="number"
                     step="0.0001"
-                    min="-90"
-                    max="90"
                     name="dropoff_latitude"
-                    value={
-                      formData.dropoff_latitude
-                    }
-                    onChange={
-                      handleChange
-                    }
+                    value={formData.dropoff_latitude}
+                    onChange={handleChange}
                     required
                   />
-
                 </div>
-
-
                 <div className="form-group">
-
-                  <label>
-                    Longitude
-                  </label>
-
+                  <label>Longitude</label>
                   <input
                     type="number"
                     step="0.0001"
-                    min="-180"
-                    max="180"
                     name="dropoff_longitude"
-                    value={
-                      formData.dropoff_longitude
-                    }
-                    onChange={
-                      handleChange
-                    }
+                    value={formData.dropoff_longitude}
+                    onChange={handleChange}
                     required
                   />
-
                 </div>
-
               </div>
-
             </div>
 
-
-            {/* ======================================
-                OTHER DETAILS
-            ====================================== */}
-
             <div className="grid">
-
-              {/* VENDOR */}
-
               <div className="form-group">
-
-                <label>
-                  Vendor
-                </label>
-
-                <select
-                  name="vendor_id"
-                  value={
-                    formData.vendor_id
-                  }
-                  onChange={
-                    handleChange
-                  }
-                >
-
-                  <option value="1">
-                    Vendor 1
-                  </option>
-
-                  <option value="2">
-                    Vendor 2
-                  </option>
-
+                <label>Vendor ID</label>
+                <select name="vendor_id" value={formData.vendor_id} onChange={handleChange}>
+                  <option value={1}>Vendor 1</option>
+                  <option value={2}>Vendor 2</option>
                 </select>
-
               </div>
 
-
-              {/* PASSENGERS */}
-
               <div className="form-group">
-
-                <label>
-                  Passengers
-                </label>
-
+                <label>Passengers</label>
                 <select
                   name="passenger_count"
-                  value={
-                    formData.passenger_count
-                  }
-                  onChange={
-                    handleChange
-                  }
+                  value={formData.passenger_count}
+                  onChange={handleChange}
                 >
-
-                  {[1, 2, 3, 4, 5, 6].map(
-                    (num) => (
-
-                      <option
-                        key={num}
-                        value={num}
-                      >
-                        {num}
-                      </option>
-
-                    )
-                  )}
-
+                  {[1, 2, 3, 4, 5, 6].map((num) => (
+                    <option key={num} value={num}>
+                      {num}
+                    </option>
+                  ))}
                 </select>
-
               </div>
-
-
-              {/* STORE FORWARD */}
 
               <div className="form-group">
-
-                <label>
-                  Store & Forward
-                </label>
-
+                <label>Store & Forward</label>
                 <select
                   name="store_and_fwd_flag"
-                  value={
-                    formData.store_and_fwd_flag
-                  }
-                  onChange={
-                    handleChange
-                  }
+                  value={formData.store_and_fwd_flag}
+                  onChange={handleChange}
                 >
-
-                  <option value="N">
-                    No
-                  </option>
-
-                  <option value="Y">
-                    Yes
-                  </option>
-
+                  <option value="N">No</option>
+                  <option value="Y">Yes</option>
                 </select>
-
               </div>
-
             </div>
 
+            {error && <div className="error-message">❌ {error}</div>}
 
-            {/* ======================================
-                BUTTONS
-            ====================================== */}
-
-            <div className="button-group">
-
-              <button
-                type="submit"
-                className="predict-btn"
-                disabled={loading}
-              >
-
-                {loading
-                  ? "⏳ Predicting..."
-                  : "🔮 Predict Trip"}
-
-              </button>
-
-
-              <button
-                type="button"
-                className="reset-btn"
-                onClick={
-                  handleReset
-                }
-                disabled={loading}
-              >
-                Reset
-              </button>
-
-            </div>
-
+            <button className="predict-btn" type="submit" disabled={loading}>
+              {loading ? "⏳ Predicting..." : "🔮 Predict Trip"}
+            </button>
           </form>
+        </section>
 
+        {/* RESULTS */}
+        <section className="result-section" id="results">
+          <div className="section-title">
+            <h2>Prediction Results</h2>
+            <p>AI-generated estimates for your trip</p>
+          </div>
 
-          {/* ======================================
-              ERROR
-          ====================================== */}
-
-          {error && (
-
-            <div className="error-message">
-
-              <strong>
-                ❌ Prediction Error
-              </strong>
-
-              <pre>
-                {error}
-              </pre>
-
+          {loading && (
+            <div className="prediction-loading">
+              <div className="loading-spinner"></div>
+              <p>AI is analyzing your trip...</p>
+              <span>Calculating duration, distance and fare</span>
             </div>
-
           )}
 
-        </section>
-        <section className="map-section">
-
-  <div className="section-title">
-
-    <h2>
-      Trip Route
-    </h2>
-
-    <p>
-      Pickup and dropoff locations
-    </p>
-
-  </div>
-
-  <div className="map-card">
-
-    <TaxiMap formData={formData} />
-
-  </div>
-
-</section>
-
-        {/* ==========================================
-            RESULTS
-        ========================================== */}
-
-        <section
-          className="result-section"
-          id="results"
-        >
-
-          <div className="section-title">
-
-            <h2>
-              Prediction Results
-            </h2>
-
-            <p>
-              AI-generated estimates
-              for your trip
-            </p>
-
-          </div>
-
-
           <div className="result-grid">
-
-
-            {/* DURATION */}
-
             <div className="result-card">
-
-              <div className="result-icon">
-                ⏱️
-              </div>
-
-              <p>
-                Duration
-              </p>
-
-              <h3>
-                {result
-                  ? result.duration_minutes
-                  : "--"}
-              </h3>
-
-              <span>
-                minutes
-              </span>
-
+              <div className="result-icon">⏱️</div>
+              <p>Duration</p>
+              <h3>{result ? result.duration_minutes : "--"}</h3>
+              <span>minutes</span>
             </div>
 
-
-            {/* FARE */}
-
             <div className="result-card">
-
-              <div className="result-icon">
-                💵
-              </div>
-
-              <p>
-                Estimated Fare
-              </p>
-
-              <h3>
-                {result
-                  ? `$${result.estimated_fare}`
-                  : "--"}
-              </h3>
-
-              <span>
-                USD
-              </span>
-
+              <div className="result-icon">💵</div>
+              <p>Estimated Fare</p>
+              <h3>{result ? `$${result.estimated_fare}` : "--"}</h3>
+              <span>USD</span>
             </div>
 
-
-            {/* DISTANCE */}
-
             <div className="result-card">
-
-              <div className="result-icon">
-                📍
-              </div>
-
-              <p>
-                Distance
-              </p>
-
-              <h3>
-                {result
-                  ? result.distance_km
-                  : "--"}
-              </h3>
-
-              <span>
-                kilometers
-              </span>
-
+              <div className="result-icon">📍</div>
+              <p>Distance</p>
+              <h3>{result ? result.distance_km : "--"}</h3>
+              <span>kilometers</span>
             </div>
 
-
-            {/* SPEED */}
-
             <div className="result-card">
-
-              <div className="result-icon">
-                🚀
-              </div>
-
-              <p>
-                Average Speed
-              </p>
-
-              <h3>
-                {result
-                  ? result.estimated_speed
-                  : "--"}
-              </h3>
-
-              <span>
-                km/h
-              </span>
-
+              <div className="result-icon">🚀</div>
+              <p>Average Speed</p>
+              <h3>{result ? result.estimated_speed : "--"}</h3>
+              <span>km/h</span>
             </div>
-
           </div>
 
+          {result && (
+            <div className="report-container">
+              <button type="button" className="report-btn" onClick={downloadReport}>
+                📄 Download Trip Report
+              </button>
+            </div>
+          )}
         </section>
-        {/* =========================
-    TRIP INSIGHTS
-========================= */}
 
-<section
-  className="analytics-section"
-  id="analytics"
->
-
-  <div className="section-title">
-
-    <h2>
-      Trip Insights
-    </h2>
-
-    <p>
-      Intelligent analysis based on your trip details
-    </p>
-
-  </div>
-
-
-  <div className="analytics-grid">
-
-
-    {/* TRAFFIC */}
-
-    <div className="analytics-card">
-
-      <div className="analytics-icon">
-        🚦
-      </div>
-
-      <div>
-
-        <span>
-          Traffic Period
-        </span>
-
-        <h3>
-          {result
-            ? insights.trafficStatus
-            : "--"}
-        </h3>
-
-      </div>
-
-    </div>
-
-
-    {/* DAY TYPE */}
-
-    <div className="analytics-card">
-
-      <div className="analytics-icon">
-        📅
-      </div>
-
-      <div>
-
-        <span>
-          Day Type
-        </span>
-
-        <h3>
-          {result
-            ? insights.isWeekend
-              ? "Weekend"
-              : "Weekday"
-            : "--"}
-        </h3>
-
-      </div>
-
-    </div>
-
-
-    {/* TIME */}
-
-    <div className="analytics-card">
-
-      <div className="analytics-icon">
-        🕐
-      </div>
-
-      <div>
-
-        <span>
-          Trip Time
-        </span>
-
-        <h3>
-          {result
-            ? insights.isNight
-              ? "Night"
-              : "Daytime"
-            : "--"}
-        </h3>
-
-      </div>
-
-    </div>
-
-
-    {/* TRIP TYPE */}
-
-    <div className="analytics-card">
-
-      <div className="analytics-icon">
-        🛣️
-      </div>
-
-      <div>
-
-        <span>
-          Trip Category
-        </span>
-
-        <h3>
-          {result
-            ? insights.tripType
-            : "--"}
-        </h3>
-
-      </div>
-
-    </div>
-
-  </div>
-
-
-  {/* SUMMARY */}
-
-  {result && (
-    <div className="insight-summary">
-
-      <div>
-
-        <strong>
-          🤖 AI Trip Analysis
-        </strong>
-
-        <p>
-
-          Your trip is classified as a{" "}
-          <b>
-            {insights.tripType.toLowerCase()}
-          </b>{" "}
-          during{" "}
-          <b>
-            {insights.trafficStatus.toLowerCase()}
-          </b>
-          .
-
-          {" "}
-
-          The predicted journey duration is{" "}
-
-          <b>
-            {result.duration_minutes} minutes
-          </b>
-
-          over approximately{" "}
-
-          <b>
-            {result.distance_km} km
-          </b>
-          .
-
-        </p>
-
-      </div>
-
-    </div>
-  )}
-
-</section>
-
-        {/* ==========================================
-            MODEL INFORMATION
-        ========================================== */}
-
-        <section
-          className="model-section"
-          id="model"
-        >
-
-          <div>
-
-            <span className="small-label">
-              MACHINE LEARNING MODEL
-            </span>
-
-            <h2>
-              XGBoost Regression
-            </h2>
-
-            <p>
-              The prediction system uses
-              a tuned XGBoost model trained
-              on more than 1.45 million
-              NYC taxi trips with engineered
-              temporal and geographical
-              features.
-            </p>
-
+        {/* TRIP INSIGHTS */}
+        <section className="analytics-section" id="analytics">
+          <div className="section-title">
+            <h2>Trip Insights</h2>
+            <p>Intelligent analysis based on your trip details</p>
           </div>
 
+          <div className="analytics-grid">
+            <div className="analytics-card">
+              <div className="analytics-icon">🚦</div>
+              <div>
+                <span>Traffic Period</span>
+                <h3>{result ? insights.trafficStatus : "--"}</h3>
+              </div>
+            </div>
+
+            <div className="analytics-card">
+              <div className="analytics-icon">📅</div>
+              <div>
+                <span>Day Type</span>
+                <h3>{result ? (insights.isWeekend ? "Weekend" : "Weekday") : "--"}</h3>
+              </div>
+            </div>
+
+            <div className="analytics-card">
+              <div className="analytics-icon">🕐</div>
+              <div>
+                <span>Trip Time</span>
+                <h3>{result ? (insights.isNight ? "Night" : "Daytime") : "--"}</h3>
+              </div>
+            </div>
+
+            <div className="analytics-card">
+              <div className="analytics-icon">🛣️</div>
+              <div>
+                <span>Trip Category</span>
+                <h3>{result ? insights.tripType : "--"}</h3>
+              </div>
+            </div>
+          </div>
+
+          {result && (
+            <div className="insight-summary">
+              <div>
+                <strong>🤖 AI Trip Analysis</strong>
+                <p>
+                  Your trip is classified as a{" "}
+                  <b>{insights.tripType.toLowerCase()}</b> during{" "}
+                  <b>{insights.trafficStatus.toLowerCase()}</b>. The predicted journey
+                  duration is <b>{result.duration_minutes} minutes</b> over
+                  approximately <b>{result.distance_km} km</b>.
+                </p>
+              </div>
+            </div>
+          )}
+        </section>
+
+        {/* MAP */}
+        <section className="map-section">
+          <div className="section-title">
+            <h2>Trip Route</h2>
+            <p>Pickup and dropoff locations</p>
+          </div>
+          <div className="map-card">
+            <TaxiMap formData={formData} />
+          </div>
+        </section>
+
+        {/* MODEL INFO */}
+        <section className="model-section" id="model">
+          <div>
+            <span className="small-label">MACHINE LEARNING MODEL</span>
+            <h2>XGBoost Regression</h2>
+            <p>
+              The prediction system uses a tuned XGBoost model trained on more
+              than 1.45 million NYC taxi trips.
+            </p>
+          </div>
 
           <div className="model-stats">
-
             <div>
-
-              <strong>
-                1.45M+
-              </strong>
-
-              <span>
-                Trips
-              </span>
-
+              <strong>1.45M+</strong>
+              <span>Trips</span>
             </div>
-
-
             <div>
-
-              <strong>
-                XGBoost
-              </strong>
-
-              <span>
-                Algorithm
-              </span>
-
+              <strong>XGBoost</strong>
+              <span>Algorithm</span>
             </div>
-
-
             <div>
-
-              <strong>
-                FastAPI
-              </strong>
-
-              <span>
-                Backend
-              </span>
-
+              <strong>Real-time</strong>
+              <span>Inference</span>
             </div>
-
           </div>
-
         </section>
-
       </main>
 
-
-      {/* ==========================================
-          FOOTER
-      ========================================== */}
-
       <footer>
-
-        <p>
-          NYC Ride • AI-Powered Taxi
-          Prediction System
-        </p>
-
+        <p>NYC Ride • Machine Learning Prediction System</p>
       </footer>
-
     </div>
   );
 }
