@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./App.css";
 
 import {
@@ -24,6 +24,9 @@ L.Icon.Default.mergeOptions({
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
+
+// NYC bounding box, used to bias/limit place search results to the city
+const NYC_VIEWBOX = "-74.26,40.92,-73.68,40.49";
 
 /* =========================================================
    ICON SET
@@ -65,6 +68,13 @@ function Icon({ name, className = "" }) {
         <svg {...common}>
           <path d="M12 21s7-6.1 7-11.5A7 7 0 0 0 5 9.5C5 14.9 12 21 12 21Z" />
           <circle cx="12" cy="9.5" r="2.4" />
+        </svg>
+      );
+    case "search":
+      return (
+        <svg {...common}>
+          <circle cx="11" cy="11" r="7" />
+          <path d="m20 20-3.2-3.2" />
         </svg>
       );
     case "route":
@@ -150,6 +160,21 @@ function Icon({ name, className = "" }) {
           <path d="M6 6l2.5 2.5M17.5 15.5 20 18M18 6l-2.5 2.5M8.5 15.5 6 18" />
         </svg>
       );
+    case "sliders":
+      return (
+        <svg {...common}>
+          <path d="M4 6h10M18 6h2M4 12h2M8 12h12M4 18h14M20 18h0" />
+          <circle cx="16" cy="6" r="2" />
+          <circle cx="6" cy="12" r="2" />
+          <circle cx="18" cy="18" r="2" />
+        </svg>
+      );
+    case "chevron":
+      return (
+        <svg {...common}>
+          <path d="m6 9 6 6 6-6" />
+        </svg>
+      );
     default:
       return null;
   }
@@ -157,6 +182,115 @@ function Icon({ name, className = "" }) {
 
 function Spinner({ className = "" }) {
   return <span className={`spinner ${className}`} aria-hidden="true" />;
+}
+
+/* =========================================================
+   LOCATION SEARCH
+   Type-ahead place search backed by OpenStreetMap's free
+   Nominatim geocoder — no API key needed. Selecting a result
+   fills in the underlying lat/lon automatically, so the user
+   never has to know or type a coordinate.
+========================================================= */
+
+function LocationSearch({ id, label, placeholder, tone, query, onQueryChange, onSelect }) {
+  const [suggestions, setSuggestions] = useState([]);
+  const [open, setOpen] = useState(false);
+  const [searching, setSearching] = useState(false);
+  const debounceRef = useRef(null);
+  const wrapRef = useRef(null);
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    if (!query || query.trim().length < 3) {
+      setSuggestions([]);
+      setSearching(false);
+      return;
+    }
+
+    debounceRef.current = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const url =
+          `https://nominatim.openstreetmap.org/search?format=json&addressdetails=0` +
+          `&limit=5&countrycodes=us&viewbox=${NYC_VIEWBOX}&bounded=1` +
+          `&q=${encodeURIComponent(query)}`;
+
+        const res = await fetch(url);
+        const data = await res.json();
+        setSuggestions(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error("Location search error:", err);
+        setSuggestions([]);
+      } finally {
+        setSearching(false);
+      }
+    }, 450);
+
+    return () => clearTimeout(debounceRef.current);
+  }, [query]);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const shortLabel = (displayName) => {
+    const parts = displayName.split(",");
+    return parts.slice(0, 2).join(",").trim();
+  };
+
+  const handleSelect = (item) => {
+    onQueryChange(shortLabel(item.display_name));
+    onSelect(Number(item.lat), Number(item.lon));
+    setOpen(false);
+    setSuggestions([]);
+  };
+
+  return (
+    <div className="location-search" ref={wrapRef}>
+      <label htmlFor={id}>{label}</label>
+
+      <div className={`location-search-box tone-${tone}`}>
+        <Icon name="pin" className={`icon-inline icon-${tone}`} />
+        <input
+          id={id}
+          type="text"
+          autoComplete="off"
+          placeholder={placeholder}
+          value={query}
+          onChange={(e) => {
+            onQueryChange(e.target.value);
+            setOpen(true);
+          }}
+          onFocus={() => suggestions.length > 0 && setOpen(true)}
+        />
+        {searching ? <Spinner /> : <Icon name="search" className="icon-inline search-hint" />}
+      </div>
+
+      {open && suggestions.length > 0 && (
+        <ul className="location-suggestions">
+          {suggestions.map((item) => (
+            <li key={item.place_id} onMouseDown={() => handleSelect(item)}>
+              <Icon name="pin" className="icon-inline" />
+              {item.display_name}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {open && !searching && query.trim().length >= 3 && suggestions.length === 0 && (
+        <ul className="location-suggestions">
+          <li className="no-results">No matches in NYC — try a different search</li>
+        </ul>
+      )}
+    </div>
+  );
 }
 
 /* =========================================================
@@ -300,8 +434,8 @@ function TaxiMap({ formData }) {
    TRIP INSIGHTS
 ========================================================= */
 
-function getTripInsights(formData, result) {
-  const date = new Date(formData.pickup_datetime);
+function getTripInsights(pickupDatetime, result) {
+  const date = new Date(pickupDatetime);
   const hour = date.getHours();
   const day = date.getDay();
 
@@ -330,7 +464,8 @@ function getTripInsights(formData, result) {
 function App() {
   const [formData, setFormData] = useState({
     vendor_id: 1,
-    pickup_datetime: "2016-06-12T08:30",
+    pickup_date: "2016-06-12",
+    pickup_time: "08:30",
     passenger_count: 1,
     pickup_latitude: 40.7489,
     pickup_longitude: -73.968,
@@ -339,15 +474,28 @@ function App() {
     store_and_fwd_flag: "N",
   });
 
+  const [pickupQuery, setPickupQuery] = useState("");
+  const [dropoffQuery, setDropoffQuery] = useState("");
+  const [showCoords, setShowCoords] = useState(false);
+
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const insights = getTripInsights(formData, result);
+  const pickupDatetime = `${formData.pickup_date}T${formData.pickup_time}`;
+  const insights = getTripInsights(pickupDatetime, result);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
+  };
+
+  const handlePickupSelect = (lat, lon) => {
+    setFormData((prev) => ({ ...prev, pickup_latitude: lat, pickup_longitude: lon }));
+  };
+
+  const handleDropoffSelect = (lat, lon) => {
+    setFormData((prev) => ({ ...prev, dropoff_latitude: lat, dropoff_longitude: lon }));
   };
 
   const downloadReport = () => {
@@ -360,13 +508,15 @@ function App() {
 
 TRIP DETAILS
 ----------------------------------------
-Pickup Date & Time : ${formData.pickup_datetime}
+Pickup Date & Time : ${pickupDatetime}
 
 Pickup Location
+${pickupQuery ? `Place             : ${pickupQuery}` : ""}
 Latitude          : ${formData.pickup_latitude}
 Longitude         : ${formData.pickup_longitude}
 
 Dropoff Location
+${dropoffQuery ? `Place             : ${dropoffQuery}` : ""}
 Latitude          : ${formData.dropoff_latitude}
 Longitude         : ${formData.dropoff_longitude}
 
@@ -420,6 +570,18 @@ Machine Learning Prediction System
       const dropoffLat = Number(formData.dropoff_latitude);
       const dropoffLon = Number(formData.dropoff_longitude);
 
+      if (!pickupQuery && !showCoords) {
+        throw new Error("Please search and select a pickup location.");
+      }
+      if (!dropoffQuery && !showCoords) {
+        throw new Error("Please search and select a dropoff location.");
+      }
+      if (Number.isNaN(pickupLat) || Number.isNaN(pickupLon)) {
+        throw new Error("Pickup location is missing coordinates.");
+      }
+      if (Number.isNaN(dropoffLat) || Number.isNaN(dropoffLon)) {
+        throw new Error("Dropoff location is missing coordinates.");
+      }
       if (pickupLat < -90 || pickupLat > 90) {
         throw new Error("Pickup latitude must be between -90 and 90.");
       }
@@ -438,7 +600,7 @@ Machine Learning Prediction System
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           vendor_id: Number(formData.vendor_id),
-          pickup_datetime: formData.pickup_datetime,
+          pickup_datetime: pickupDatetime,
           passenger_count: Number(formData.passenger_count),
           pickup_longitude: pickupLon,
           pickup_latitude: pickupLat,
@@ -511,7 +673,7 @@ Machine Learning Prediction System
           <div className="card-header">
             <div>
               <h2>Trip details</h2>
-              <p>Enter your pickup and dropoff information</p>
+              <p>Search a pickup and dropoff spot — coordinates fill in automatically</p>
             </div>
             <span className="icon">
               <Icon name="pin" />
@@ -519,78 +681,119 @@ Machine Learning Prediction System
           </div>
 
           <form onSubmit={handleSubmit}>
-            <div className="form-group full">
-              <label>Pickup date & time</label>
-              <input
-                type="datetime-local"
-                name="pickup_datetime"
-                value={formData.pickup_datetime}
-                onChange={handleChange}
-                required
-              />
-            </div>
+            {/* DATE + TIME — separate boxes */}
+            <div className="grid">
+              <div className="form-group">
+                <label htmlFor="pickup_date">
+                  <Icon name="calendar" className="icon-inline" />
+                  Pickup date
+                </label>
+                <input
+                  id="pickup_date"
+                  type="date"
+                  name="pickup_date"
+                  value={formData.pickup_date}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
 
-            <div className="location-section">
-              <h3>
-                <Icon name="pin" className="icon-inline icon-pickup" />
-                Pickup location
-              </h3>
-              <div className="grid">
-                <div className="form-group">
-                  <label>Latitude</label>
-                  <input
-                    type="number"
-                    step="0.0001"
-                    name="pickup_latitude"
-                    value={formData.pickup_latitude}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Longitude</label>
-                  <input
-                    type="number"
-                    step="0.0001"
-                    name="pickup_longitude"
-                    value={formData.pickup_longitude}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
+              <div className="form-group">
+                <label htmlFor="pickup_time">
+                  <Icon name="clock" className="icon-inline" />
+                  Pickup time
+                </label>
+                <input
+                  id="pickup_time"
+                  type="time"
+                  name="pickup_time"
+                  value={formData.pickup_time}
+                  onChange={handleChange}
+                  required
+                />
               </div>
             </div>
 
-            <div className="location-section">
-              <h3>
-                <Icon name="pin" className="icon-inline icon-dropoff" />
-                Dropoff location
-              </h3>
-              <div className="grid">
-                <div className="form-group">
-                  <label>Latitude</label>
-                  <input
-                    type="number"
-                    step="0.0001"
-                    name="dropoff_latitude"
-                    value={formData.dropoff_latitude}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Longitude</label>
-                  <input
-                    type="number"
-                    step="0.0001"
-                    name="dropoff_longitude"
-                    value={formData.dropoff_longitude}
-                    onChange={handleChange}
-                    required
-                  />
+            {/* PICKUP SEARCH */}
+            <LocationSearch
+              id="pickup_search"
+              label="Pickup location"
+              placeholder="Search an address, landmark or neighborhood…"
+              tone="pickup"
+              query={pickupQuery}
+              onQueryChange={setPickupQuery}
+              onSelect={handlePickupSelect}
+            />
+
+            {/* DROPOFF SEARCH */}
+            <LocationSearch
+              id="dropoff_search"
+              label="Dropoff location"
+              placeholder="Search an address, landmark or neighborhood…"
+              tone="dropoff"
+              query={dropoffQuery}
+              onQueryChange={setDropoffQuery}
+              onSelect={handleDropoffSelect}
+            />
+
+            {/* MANUAL COORDINATES (advanced, collapsed by default) */}
+            <button
+              type="button"
+              className="coords-toggle"
+              onClick={() => setShowCoords((v) => !v)}
+            >
+              <Icon name="sliders" className="icon-inline" />
+              Enter exact coordinates instead
+              <Icon name="chevron" className={`icon-inline chevron ${showCoords ? "open" : ""}`} />
+            </button>
+
+            {showCoords && (
+              <div className="location-section">
+                <h3>Manual coordinates</h3>
+                <div className="grid">
+                  <div className="form-group">
+                    <label>Pickup latitude</label>
+                    <input
+                      type="number"
+                      step="0.0001"
+                      name="pickup_latitude"
+                      value={formData.pickup_latitude}
+                      onChange={handleChange}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Pickup longitude</label>
+                    <input
+                      type="number"
+                      step="0.0001"
+                      name="pickup_longitude"
+                      value={formData.pickup_longitude}
+                      onChange={handleChange}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Dropoff latitude</label>
+                    <input
+                      type="number"
+                      step="0.0001"
+                      name="dropoff_latitude"
+                      value={formData.dropoff_latitude}
+                      onChange={handleChange}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Dropoff longitude</label>
+                    <input
+                      type="number"
+                      step="0.0001"
+                      name="dropoff_longitude"
+                      value={formData.dropoff_longitude}
+                      onChange={handleChange}
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             <div className="grid">
               <div className="form-group">
