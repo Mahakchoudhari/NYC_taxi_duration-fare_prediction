@@ -2586,7 +2586,7 @@ function App() {
             className="logo-icon"
           />
 
-          NYC<span>Ride</span>
+          RIDE<span>Insight</span>
 
         </div>
 
