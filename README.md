@@ -1,224 +1,154 @@
-# 🚖 NYC Taxi Fare & Trip Duration Prediction
+# 🚖RIDE Insight
+
+<p align="center">
+  <b>An End-to-End Machine Learning Application for NYC Taxi Trip Prediction</b>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.10+-blue?style=for-the-badge&logo=python" alt="Python">
+  <img src="https://img.shields.io/badge/React-Vite-61DAFB?style=for-the-badge&logo=react" alt="React">
+  <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi" alt="FastAPI">
+  <img src="https://img.shields.io/badge/XGBoost-ML-red?style=for-the-badge" alt="XGBoost">
+  <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License">
+</p>
+
+---
 
 ## 📌 Overview
 
-This project predicts:
+**NYC Taxi Fare & Trip Duration Prediction** is an end-to-end machine learning project that predicts **taxi trip duration** using trip details, geographical information, passenger data, and temporal features.
 
-- ⏱️ Taxi Trip Duration
-- 💰 Estimated Taxi Fare
-- 🚗 Estimated Speed
+The project started as a machine learning and Streamlit prototype and was later developed into a **full-stack ML application** using:
 
-using Machine Learning on the NYC Taxi Dataset.
+- 🧠 XGBoost for machine learning
+- ⚙️ Custom preprocessing and feature engineering
+- 🚀 FastAPI for model serving
+- ⚛️ React + Vite for the frontend
+- 🔌 REST API for frontend-backend communication
 
-The project uses:
+The application accepts trip information from the user and returns a real-time prediction along with derived trip insights such as estimated distance, speed, and fare.
 
-- Feature Engineering
-- XGBoost Regressor
-- Hyperparameter Tuning
-- Streamlit Web App
+---
+
+## 🌐 Live Application
+
+> 🚧 Deployment in progress
+
+| Service | Status |
+|---|---|
+| Frontend | 🚧 Coming Soon |
+| Backend API | 🚧 Coming Soon |
+| API Documentation | 🚧 Coming Soon |
+
+Once deployment is completed, the links will be added here.
 
 ---
 
 # 🎯 Objectives
 
-- Predict trip duration accurately
-- Estimate taxi fare dynamically
-- Improve performance using hyperparameter tuning
-- Deploy model using Streamlit
+The primary objectives of this project are:
+
+- Predict NYC taxi trip duration using machine learning
+- Perform meaningful temporal and geographical feature engineering
+- Compare multiple regression algorithms
+- Optimize the final model using hyperparameter tuning
+- Build a reusable preprocessing pipeline
+- Serialize the trained ML model
+- Create a REST API for real-time inference
+- Develop a responsive React frontend
+- Integrate frontend and backend into a complete ML application
+- Prepare the project for cloud deployment
 
 ---
 
-# 📂 Dataset
+# 🧩 Problem Statement
 
-The dataset contains:
+Taxi trip duration depends on several factors, including:
 
-- Vendor ID
-- Pickup & Dropoff Datetime
-- Passenger Count
-- Pickup & Dropoff Coordinates
-- Store and Forward Flag
-- Trip Duration
+- Pickup and dropoff locations
+- Time of day
+- Day of the week
+- Passenger count
+- Rush-hour conditions
+- Distance between locations
+- Route characteristics
 
-Dataset Size:
-
-- Rows: 1,458,644
-- Columns: 10
+The goal of this project is to learn these relationships from historical NYC taxi data and predict the expected trip duration for a new taxi ride.
 
 ---
 
-# ⚙️ Workflow
+# 📊 Dataset
 
-## 1️⃣ Data Preprocessing
+The project uses the **NYC Taxi Trip Duration Dataset**.
 
-- Removed unnecessary columns
-- Checked missing values
-- Removed outliers
-- Log transformation of target variable
+### Dataset Information
 
-## 2️⃣ Feature Engineering
+| Property | Value |
+|---|---:|
+| Total Rows | 1,458,644 |
+| Total Columns | 10 |
+| Problem Type | Regression |
+| Target Variable | Trip Duration |
 
-Created features such as:
+### Dataset Features
 
-- Pickup Hour
-- Day of Week
-- Weekend Indicator
-- Rush Hour Indicator
-- Night Indicator
-- Haversine Distance
-- Manhattan Distance
-- Route Ratio
-- Bearing Angle
+| Feature | Description |
+|---|---|
+| `vendor_id` | Taxi vendor identifier |
+| `pickup_datetime` | Date and time of pickup |
+| `dropoff_datetime` | Date and time of dropoff |
+| `passenger_count` | Number of passengers |
+| `pickup_longitude` | Pickup longitude |
+| `pickup_latitude` | Pickup latitude |
+| `dropoff_longitude` | Dropoff longitude |
+| `dropoff_latitude` | Dropoff latitude |
+| `store_and_fwd_flag` | Indicates whether trip data was stored before forwarding |
+| `trip_duration` | Duration of the taxi trip in seconds |
 
----
-
-# 🤖 Models Used
-
-- Linear Regression
-- Decision Tree Regressor
-- Random Forest Regressor
-- XGBoost Regressor 
+> The original dataset is not included in the GitHub repository because of its large file size.
 
 ---
 
-# 🔥 Hyperparameter Tuning
+# 🔄 End-to-End Workflow
 
-Performed tuning using:
-
-- RandomizedSearchCV
-- GridSearchCV
-- Optuna
-
-### Best Optuna Parameters
-
-```python
-{
- 'n_estimators': 792,
- 'max_depth': 8,
- 'learning_rate': 0.074,
- 'subsample': 0.828,
- 'colsample_bytree': 0.633,
- 'min_child_weight': 8
-}
-```
-
----
-
-# 📊 Model Performance
-
-| Metric | Score |
-|--------|--------|
-| MAE | 203.24 |
-| RMSE | 298.30 |
-| R² Score | 0.73 |
-| Accuracy | 72.75% |
-
----
-
-# 🚖 Sample Prediction
-
-| Prediction | Value |
-|------------|-------|
-| Trip Duration | 517.65 sec |
-| Distance | 1.81 km |
-| Estimated Fare | $11.02 |
-| Speed | 12.59 km/h |
-
----
-
-# 🌐 Streamlit App
-
-The project includes a Streamlit web app for real-time predictions.
-
-## Features
-
-✅ Trip duration prediction  
-✅ Fare estimation  
-✅ Speed calculation  
-✅ Interactive UI  
-
----
-
-# 📁 Project Structure
-
-```bash
-NYC_taxi_duration-fare_prediction/
-│
-├── notebooks/
-│   └── hyperparameter_tuned.ipynb
-│
-├── models/
-│   ├── best_model.pkl
-│   └── pipe.pkl
-│
-├── app.py
-├── requirements.txt
-└── README.md
-```
-
----
-
-# 🛠️ Tech Stack
-
-- Python
-- Pandas
-- NumPy
-- Scikit-learn
-- XGBoost
-- Optuna
-- Streamlit
-
----
-
-# 🚀 Installation
-
-## Clone Repository
-
-```bash
-git clone https://github.com/Mahakchoudhari/NYC_taxi_duration-fare_prediction.git
-```
-
-## Move to Project Folder
-
-```bash
-cd NYC_taxi_duration-fare_prediction
-```
-
-## Install Dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-## Run Streamlit App
-
-```bash
-streamlit run app.py
-```
-
----
-
-# 💾 Model Saving
-
-```python
-pickle.dump(best_model, open('best_model.pkl', 'wb'))
-pickle.dump(pipe, open('pipe.pkl', 'wb'))
-```
-
----
-
-# 🔮 Future Improvements
-
-- Live traffic integration
-- Map visualization
-- Deep learning models
-- Cloud deployment
-
----
-
-# 👩‍💻 Author
-
-**Mehak Choudhari**
-
----
-
-⭐ If you like this project, don't forget to star the repository!
+```text
+                NYC Taxi Dataset
+                       │
+                       ▼
+              Data Exploration
+                       │
+                       ▼
+              Data Preprocessing
+                       │
+                       ▼
+             Feature Engineering
+                       │
+                       ▼
+              Model Development
+                       │
+                       ▼
+             Model Comparison
+                       │
+                       ▼
+          Hyperparameter Optimization
+                       │
+                       ▼
+               Final XGBoost Model
+                       │
+                       ▼
+           Preprocessing Pipeline
+                       │
+                       ▼
+                Model Serialization
+                       │
+                       ▼
+                 FastAPI Backend
+                       │
+                       ▼
+                 REST API
+                       │
+                       ▼
+                React Frontend
+                       │
+                       ▼
+              Real-Time Prediction
