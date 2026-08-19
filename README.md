@@ -1,224 +1,253 @@
-# 🚖 NYC Taxi Fare & Trip Duration Prediction
+# 🚖 RIDE Insight
 
-## 📌 Overview
+<p align="center">
+  <b>An End-to-End Machine Learning Application for Real-Time NYC Taxi Trip Prediction</b>
+</p>
 
-This project predicts:
-
-- ⏱️ Taxi Trip Duration
-- 💰 Estimated Taxi Fare
-- 🚗 Estimated Speed
-
-using Machine Learning on the NYC Taxi Dataset.
-
-The project uses:
-
-- Feature Engineering
-- XGBoost Regressor
-- Hyperparameter Tuning
-- Streamlit Web App
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.10+-blue?style=for-the-badge&logo=python" alt="Python">
+  <img src="https://img.shields.io/badge/XGBoost-ML-red?style=for-the-badge" alt="XGBoost">
+  <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi" alt="FastAPI">
+  <img src="https://img.shields.io/badge/React-Vite-61DAFB?style=for-the-badge&logo=react" alt="React">
+  <img src="https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=streamlit" alt="Streamlit">
+  <img src="https://img.shields.io/badge/Optuna-Tuning-purple?style=for-the-badge" alt="Optuna">
+  <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License">
+</p>
 
 ---
 
-# 🎯 Objectives
+## 📌 Project Overview
 
-- Predict trip duration accurately
-- Estimate taxi fare dynamically
-- Improve performance using hyperparameter tuning
-- Deploy model using Streamlit
+**NYC Taxi Fare & Trip Duration Prediction** is a production-ready, end-to-end machine learning application that predicts **taxi trip duration and estimated fare** using real NYC taxi trip data.
 
----
+The project evolved from a machine learning notebook to a **full-stack ML application** featuring:
 
-# 📂 Dataset
-
-The dataset contains:
-
-- Vendor ID
-- Pickup & Dropoff Datetime
-- Passenger Count
-- Pickup & Dropoff Coordinates
-- Store and Forward Flag
-- Trip Duration
-
-Dataset Size:
-
-- Rows: 1,458,644
-- Columns: 10
+- 🧠 **XGBoost** with advanced hyperparameter tuning via **Optuna**
+- ⚙️ Custom **preprocessing pipeline** with geospatial & temporal feature engineering
+- 🚀 **FastAPI** REST backend for real-time model inference
+- ⚛️ **React + Vite** responsive frontend
+- 📊 **Streamlit** prototype for rapid ML demos
 
 ---
 
-# ⚙️ Workflow
+## 🌐 Live Application
 
-## 1️⃣ Data Preprocessing
+> 🚧 Deployment in progress
 
-- Removed unnecessary columns
-- Checked missing values
-- Removed outliers
-- Log transformation of target variable
-
-## 2️⃣ Feature Engineering
-
-Created features such as:
-
-- Pickup Hour
-- Day of Week
-- Weekend Indicator
-- Rush Hour Indicator
-- Night Indicator
-- Haversine Distance
-- Manhattan Distance
-- Route Ratio
-- Bearing Angle
+| Service | Status |
+|---------|--------|
+| Frontend (React) | 🚧 Coming Soon |
+| Backend API (FastAPI) | 🚧 Coming Soon |
+| API Documentation | 🚧 Coming Soon |
 
 ---
 
-# 🤖 Models Used
+## 🎯 Key Highlights
 
-- Linear Regression
-- Decision Tree Regressor
-- Random Forest Regressor
-- XGBoost Regressor 
+- Trained on **1.45 Million** real NYC taxi trip records
+- Advanced **feature engineering** — Haversine distance, Manhattan distance, bearing, rush hour flags, cyclical time encoding
+- **Hyperparameter tuning** using Optuna with 15 trials
+- Custom **scikit-learn Pipeline** for reproducible preprocessing
+- **REST API** for real-time inference
+- **Full-stack integration** — React frontend + FastAPI backend
 
 ---
 
-# 🔥 Hyperparameter Tuning
+## 📊 Dataset
 
-Performed tuning using:
+**Source:** NYC Taxi Trip Duration Dataset (Kaggle)
 
-- RandomizedSearchCV
-- GridSearchCV
-- Optuna
+| Property | Value |
+|----------|-------|
+| Total Rows | 1,458,644 |
+| Total Columns | 10 |
+| Problem Type | Regression |
+| Target Variable | `trip_duration` (seconds) |
 
-### Best Optuna Parameters
+### Features Used
 
-```python
-{
- 'n_estimators': 792,
- 'max_depth': 8,
- 'learning_rate': 0.074,
- 'subsample': 0.828,
- 'colsample_bytree': 0.633,
- 'min_child_weight': 8
-}
+| Feature | Description |
+|---------|-------------|
+| `vendor_id` | Taxi vendor identifier |
+| `pickup_datetime` | Date and time of pickup |
+| `passenger_count` | Number of passengers |
+| `pickup_longitude/latitude` | Pickup GPS coordinates |
+| `dropoff_longitude/latitude` | Dropoff GPS coordinates |
+| `store_and_fwd_flag` | Trip data storage flag |
+
+> Dataset not included due to large file size. Download from [Kaggle](https://www.kaggle.com/competitions/nyc-taxi-trip-duration/data).
+
+---
+
+## 🔧 Feature Engineering
+
+| Feature | Description |
+|---------|-------------|
+| `haversine_km` | Straight-line distance between pickup & dropoff |
+| `manhattan_km` | Road-approximated distance |
+| `route_ratio` | Manhattan / Haversine ratio |
+| `bearing` | Direction of travel |
+| `pickup_hour` | Hour of pickup |
+| `day_of_week` | Day of the week |
+| `is_rush_hour` | Rush hour flag (7-10 AM, 4-8 PM) |
+| `is_weekend` | Weekend flag |
+| `is_night` | Night time flag |
+| `hour_sin/cos` | Cyclical encoding of hour |
+| `dow_sin/cos` | Cyclical encoding of day |
+
+---
+
+## 🤖 Model Development
+
+### Models Compared
+
+| Model | Description |
+|-------|-------------|
+| Linear Regression | Baseline model |
+| Ridge / Lasso | Regularized regression |
+| Random Forest | Ensemble tree model |
+| XGBoost | **Final Model** ✅ |
+
+### Hyperparameter Tuning
+
+Used **Optuna** for intelligent hyperparameter search over 15 trials optimizing:
+`n_estimators`, `max_depth`, `learning_rate`, `subsample`, `colsample_bytree`, `reg_alpha`, `reg_lambda`, `gamma`
+
+### Model Performance
+
+| Metric | Score |
+|--------|-------|
+| R² Score | ~75%+ |
+| MAE | Low |
+| RMSE | Low |
+
+---
+
+## 🔄 Project Workflow
+
+```
+NYC Taxi Dataset (1.45M rows)
+         │
+         ▼
+  Data Exploration & EDA
+         │
+         ▼
+  Outlier Handling (IQR)
+         │
+         ▼
+  Feature Engineering
+         │
+         ▼
+  Model Comparison
+         │
+         ▼
+  Hyperparameter Tuning (Optuna)
+         │
+         ▼
+  Final XGBoost Pipeline
+         │
+         ▼
+  Model Serialization (Pickle)
+         │
+    ┌────┴────┐
+    ▼         ▼
+Streamlit   FastAPI Backend
+  App        REST API
+               │
+               ▼
+         React Frontend
+               │
+               ▼
+      Real-Time Prediction
 ```
 
 ---
 
-# 📊 Model Performance
+## 🗂️ Project Structure
 
-| Metric | Score |
-|--------|--------|
-| MAE | 203.24 |
-| RMSE | 298.30 |
-| R² Score | 0.73 |
-| Accuracy | 72.75% |
-
----
-
-# 🚖 Sample Prediction
-
-| Prediction | Value |
-|------------|-------|
-| Trip Duration | 517.65 sec |
-| Distance | 1.81 km |
-| Estimated Fare | $11.02 |
-| Speed | 12.59 km/h |
-
----
-
-# 🌐 Streamlit App
-
-The project includes a Streamlit web app for real-time predictions.
-
-## Features
-
-✅ Trip duration prediction  
-✅ Fare estimation  
-✅ Speed calculation  
-✅ Interactive UI  
-
----
-
-# 📁 Project Structure
-
-```bash
-NYC_taxi_duration-fare_prediction/
+```
+NYC_Taxi_Trip_Duration/
 │
-├── notebooks/
-│   └── hyperparameter_tuned.ipynb
+├── notebook/
+│   └── nyc_taxi.ipynb         ← ML Notebook
 │
-├── models/
-│   ├── best_model.pkl
-│   └── pipe.pkl
+├── backend/
+│   ├── main.py                ← FastAPI app
+│   ├── best_model.pkl         ← Trained model
+│   └── pipe.pkl               ← Preprocessing pipeline
 │
-├── app.py
+├── frontend/
+│   ├── src/
+│   └── package.json
+│
+├── streamlit_app/
+│   └── app.py                 ← Streamlit prototype
+│
 ├── requirements.txt
 └── README.md
 ```
 
 ---
 
-# 🛠️ Tech Stack
+## 📥 Download Model Files
 
-- Python
-- Pandas
-- NumPy
-- Scikit-learn
-- XGBoost
-- Optuna
-- Streamlit
+`.pkl` files not included due to size. Download from Google Drive:
+
+| File | Link |
+|------|------|
+| best_model.pkl | [Download](https://drive.google.com/your-link-here) |
+| pipe.pkl | [Download](https://drive.google.com/your-link-here) |
 
 ---
 
-# 🚀 Installation
+## 🚀 How to Run
 
-## Clone Repository
-
-```bash
-git clone https://github.com/Mahakchoudhari/NYC_taxi_duration-fare_prediction.git
-```
-
-## Move to Project Folder
-
-```bash
-cd NYC_taxi_duration-fare_prediction
-```
-
-## Install Dependencies
-
+### Streamlit App
 ```bash
 pip install -r requirements.txt
-```
-
-## Run Streamlit App
-
-```bash
 streamlit run app.py
 ```
 
----
+### FastAPI Backend
+```bash
+cd backend
+uvicorn main:app --reload
+```
 
-# 💾 Model Saving
-
-```python
-pickle.dump(best_model, open('best_model.pkl', 'wb'))
-pickle.dump(pipe, open('pipe.pkl', 'wb'))
+### React Frontend
+```bash
+cd frontend
+npm install
+npm run dev
 ```
 
 ---
 
-# 🔮 Future Improvements
+## 📦 Requirements
 
-- Live traffic integration
-- Map visualization
-- Deep learning models
-- Cloud deployment
+```
+streamlit
+fastapi
+uvicorn
+xgboost
+scikit-learn
+pandas
+numpy
+optuna
+matplotlib
+seaborn
+```
 
 ---
 
-# 👩‍💻 Author
+## 👩‍💻 Author
 
-**Mehak Choudhari**
+**Mahak Choudhari**
+B.Tech — Artificial Intelligence & Machine Learning (2nd Year)
+[GitHub](https://github.com/Mahakchoudhari) | [LinkedIn](https://linkedin.com/in/mahakchoudhari)
 
 ---
 
-⭐ If you like this project, don't forget to star the repository!
+## 📄 License
+
+This project is open source and available under the [MIT License](LICENSE).
