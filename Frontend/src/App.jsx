@@ -4047,7 +4047,7 @@ function App() {
       <footer className="footer">
 
         <p>
-          NYC Ride &middot;
+          RIDE Insight &middot;
           Machine learning prediction system
         </p>
 
