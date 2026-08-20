@@ -1,0 +1,220 @@
+{
+  "success": true,
+  "total_trips": 1458644,
+  "avg_duration_minutes": 15.99,
+  "avg_passengers": 1.66,
+  "rush_hour": {
+    "rush_trips": 661529,
+    "normal_trips": 797115
+  },
+  "day_type": {
+    "weekday_trips": 1042410,
+    "weekend_trips": 416234
+  },
+  "trips_by_hour": [
+    {
+      "hour": 0,
+      "trips": 53248
+    },
+    {
+      "hour": 1,
+      "trips": 38571
+    },
+    {
+      "hour": 2,
+      "trips": 27972
+    },
+    {
+      "hour": 3,
+      "trips": 20895
+    },
+    {
+      "hour": 4,
+      "trips": 15792
+    },
+    {
+      "hour": 5,
+      "trips": 15002
+    },
+    {
+      "hour": 6,
+      "trips": 33248
+    },
+    {
+      "hour": 7,
+      "trips": 55600
+    },
+    {
+      "hour": 8,
+      "trips": 67053
+    },
+    {
+      "hour": 9,
+      "trips": 67663
+    },
+    {
+      "hour": 10,
+      "trips": 65437
+    },
+    {
+      "hour": 11,
+      "trips": 68476
+    },
+    {
+      "hour": 12,
+      "trips": 71873
+    },
+    {
+      "hour": 13,
+      "trips": 71473
+    },
+    {
+      "hour": 14,
+      "trips": 74292
+    },
+    {
+      "hour": 15,
+      "trips": 71811
+    },
+    {
+      "hour": 16,
+      "trips": 64313
+    },
+    {
+      "hour": 17,
+      "trips": 76483
+    },
+    {
+      "hour": 18,
+      "trips": 90600
+    },
+    {
+      "hour": 19,
+      "trips": 90308
+    },
+    {
+      "hour": 20,
+      "trips": 84072
+    },
+    {
+      "hour": 21,
+      "trips": 84185
+    },
+    {
+      "hour": 22,
+      "trips": 80492
+    },
+    {
+      "hour": 23,
+      "trips": 69785
+    }
+  ],
+  "duration_by_hour": [
+    {
+      "hour": 0,
+      "duration_minutes": 15.61
+    },
+    {
+      "hour": 1,
+      "duration_minutes": 15.05
+    },
+    {
+      "hour": 2,
+      "duration_minutes": 14.83
+    },
+    {
+      "hour": 3,
+      "duration_minutes": 14.83
+    },
+    {
+      "hour": 4,
+      "duration_minutes": 15.37
+    },
+    {
+      "hour": 5,
+      "duration_minutes": 13.7
+    },
+    {
+      "hour": 6,
+      "duration_minutes": 13.29
+    },
+    {
+      "hour": 7,
+      "duration_minutes": 13.86
+    },
+    {
+      "hour": 8,
+      "duration_minutes": 15.41
+    },
+    {
+      "hour": 9,
+      "duration_minutes": 15.56
+    },
+    {
+      "hour": 10,
+      "duration_minutes": 15.56
+    },
+    {
+      "hour": 11,
+      "duration_minutes": 16.11
+    },
+    {
+      "hour": 12,
+      "duration_minutes": 16.56
+    },
+    {
+      "hour": 13,
+      "duration_minutes": 17.2
+    },
+    {
+      "hour": 14,
+      "duration_minutes": 17.93
+    },
+    {
+      "hour": 15,
+      "duration_minutes": 18.65
+    },
+    {
+      "hour": 16,
+      "duration_minutes": 18.0
+    },
+    {
+      "hour": 17,
+      "duration_minutes": 17.18
+    },
+    {
+      "hour": 18,
+      "duration_minutes": 16.36
+    },
+    {
+      "hour": 19,
+      "duration_minutes": 14.91
+    },
+    {
+      "hour": 20,
+      "duration_minutes": 14.66
+    },
+    {
+      "hour": 21,
+      "duration_minutes": 14.84
+    },
+    {
+      "hour": 22,
+      "duration_minutes": 17.06
+    },
+    {
+      "hour": 23,
+      "duration_minutes": 15.42
+    }
+  ],
+  "vendor_distribution": [
+    {
+      "vendor_id": 1,
+      "trips": 678342
+    },
+    {
+      "vendor_id": 2,
+      "trips": 780302
+    }
+  ]
+}

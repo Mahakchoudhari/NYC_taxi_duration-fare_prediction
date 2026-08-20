@@ -1,7 +1,7 @@
 from pathlib import Path
 import logging
 import pickle
-
+import json
 import pandas as pd
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -522,367 +522,61 @@ def predict(data: TaxiInput):
 # ANALYTICS ENDPOINT
 # ============================================================
 
+# ============================================================
+# ANALYTICS ENDPOINT
+# ============================================================
+
 @app.get("/analytics")
 def get_analytics():
 
     try:
-
-        logger.info(
-            "Analytics request received"
-        )
-
+        logger.info("Analytics request received")
 
         # ----------------------------------------------------
         # DATASET PATH
         # ----------------------------------------------------
 
-        dataset_path = BASE_DIR / "NYC.csv"
+        analytics_path = BASE_DIR / "analytics.json"
 
+        # ----------------------------------------------------
+        # CHECK FILE
+        # ----------------------------------------------------
 
-        if not dataset_path.exists():
-
+        if not analytics_path.exists():
             raise HTTPException(
                 status_code=404,
-                detail="Analytics dataset not found."
+                detail="Analytics data file not found."
             )
 
-
         # ----------------------------------------------------
-        # LOAD DATASET
-        # ----------------------------------------------------
-
-        df = pd.read_csv(
-            dataset_path
-        )
-
-
-        # ----------------------------------------------------
-        # DATETIME
+        # LOAD ANALYTICS DATA
         # ----------------------------------------------------
 
-        df["pickup_datetime"] = pd.to_datetime(
-            df["pickup_datetime"],
-            errors="coerce"
-        )
-
-
-        df = df.dropna(
-            subset=["pickup_datetime"]
-        )
-
-
-        # ----------------------------------------------------
-        # PICKUP HOUR
-        # ----------------------------------------------------
-
-        df["pickup_hour"] = (
-            df["pickup_datetime"].dt.hour
-        )
-
-
-        # ----------------------------------------------------
-        # TOTAL TRIPS
-        # ----------------------------------------------------
-
-        total_trips = int(
-            len(df)
-        )
-
-
-        # ----------------------------------------------------
-        # AVERAGE PASSENGERS
-        # ----------------------------------------------------
-
-        avg_passengers = round(
-            float(
-                df["passenger_count"].mean()
-            ),
-            2
-        )
-
-
-        # ----------------------------------------------------
-        # AVERAGE DURATION
-        # ----------------------------------------------------
-
-        avg_duration_minutes = None
-
-        if "trip_duration" in df.columns:
-
-            avg_duration_minutes = round(
-                float(
-                    df["trip_duration"].mean()
-                ) / 60,
-                2
-            )
-
-
-        # ----------------------------------------------------
-        # TRIPS BY HOUR
-        # ----------------------------------------------------
-
-        trips_by_hour_df = (
-            df
-            .groupby("pickup_hour")
-            .size()
-            .reset_index(name="trips")
-        )
-
-
-        trips_by_hour = [
-
-            {
-                "hour": int(row["pickup_hour"]),
-                "trips": int(row["trips"]),
-            }
-
-            for _, row
-            in trips_by_hour_df.iterrows()
-        ]
-
-
-        # ----------------------------------------------------
-        # DURATION BY HOUR
-        # ----------------------------------------------------
-
-        duration_by_hour = []
-
-        if "trip_duration" in df.columns:
-
-            duration_df = (
-                df
-                .groupby("pickup_hour")[
-                    "trip_duration"
-                ]
-                .mean()
-                .reset_index()
-            )
-
-
-            duration_by_hour = [
-
-                {
-                    "hour": int(row["pickup_hour"]),
-
-                    "duration_minutes": round(
-                        float(
-                            row["trip_duration"]
-                        ) / 60,
-                        2
-                    ),
-                }
-
-                for _, row
-                in duration_df.iterrows()
-            ]
-
-
-        # ----------------------------------------------------
-        # RUSH HOUR
-        # ----------------------------------------------------
-
-        rush_hours = [
-            7,
-            8,
-            9,
-            10,
-            16,
-            17,
-            18,
-            19,
-            20,
-        ]
-
-
-        df["is_rush_hour"] = (
-            df["pickup_hour"]
-            .isin(rush_hours)
-        )
-
-
-        rush_trips = int(
-            df["is_rush_hour"].sum()
-        )
-
-
-        normal_trips = int(
-            (~df["is_rush_hour"]).sum()
-        )
-
-
-        # ----------------------------------------------------
-        # RUSH / NORMAL DURATION
-        # ----------------------------------------------------
-
-        rush_avg_duration = None
-        normal_avg_duration = None
-
-
-        if "trip_duration" in df.columns:
-
-            rush_data = df[
-                df["is_rush_hour"]
-            ]
-
-            normal_data = df[
-                ~df["is_rush_hour"]
-            ]
-
-
-            if len(rush_data) > 0:
-
-                rush_avg_duration = round(
-                    float(
-                        rush_data[
-                            "trip_duration"
-                        ].mean()
-                    ) / 60,
-                    2
-                )
-
-
-            if len(normal_data) > 0:
-
-                normal_avg_duration = round(
-                    float(
-                        normal_data[
-                            "trip_duration"
-                        ].mean()
-                    ) / 60,
-                    2
-                )
-
-
-        # ----------------------------------------------------
-        # WEEKDAY / WEEKEND
-        # ----------------------------------------------------
-
-        df["day_of_week"] = (
-            df["pickup_datetime"]
-            .dt.dayofweek
-        )
-
-
-        df["is_weekend"] = (
-            df["day_of_week"] >= 5
-        )
-
-
-        weekday_trips = int(
-            (~df["is_weekend"]).sum()
-        )
-
-
-        weekend_trips = int(
-            df["is_weekend"].sum()
-        )
-
-
-        # ----------------------------------------------------
-        # VENDOR DISTRIBUTION
-        # ----------------------------------------------------
-
-        vendor_distribution = []
-
-
-        if "vendor_id" in df.columns:
-
-            vendor_df = (
-                df
-                .groupby("vendor_id")
-                .size()
-                .reset_index(name="trips")
-            )
-
-
-            vendor_distribution = [
-
-                {
-                    "vendor_id": int(
-                        row["vendor_id"]
-                    ),
-
-                    "trips": int(
-                        row["trips"]
-                    ),
-                }
-
-                for _, row
-                in vendor_df.iterrows()
-            ]
-
+        with open(
+            analytics_path,
+            "r",
+            encoding="utf-8"
+        ) as f:
+            analytics_data = json.load(f)
 
         # ----------------------------------------------------
         # RESPONSE
         # ----------------------------------------------------
 
-        result = {
-
+        return {
             "success": True,
-
-            "total_trips": total_trips,
-
-            "avg_passengers": avg_passengers,
-
-            "avg_duration_minutes":
-                avg_duration_minutes,
-
-            "trips_by_hour":
-                trips_by_hour,
-
-            "duration_by_hour":
-                duration_by_hour,
-
-            "rush_hour": {
-
-                "rush_trips":
-                    rush_trips,
-
-                "normal_trips":
-                    normal_trips,
-
-                "rush_avg_duration_minutes":
-                    rush_avg_duration,
-
-                "normal_avg_duration_minutes":
-                    normal_avg_duration,
-            },
-
-            "day_type": {
-
-                "weekday_trips":
-                    weekday_trips,
-
-                "weekend_trips":
-                    weekend_trips,
-            },
-
-            "vendor_distribution":
-                vendor_distribution,
+            **analytics_data
         }
-
-
-        logger.info(
-            "Analytics calculated successfully"
-        )
-
-
-        return result
-
 
     except HTTPException:
         raise
 
-
     except Exception as e:
-
         logger.exception(
             "Analytics failed"
         )
 
         raise HTTPException(
             status_code=500,
-            detail=(
-                "Unable to calculate analytics."
-            ),
+            detail="Unable to load analytics."
         ) from e
